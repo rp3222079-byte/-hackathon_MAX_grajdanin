@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]  # ошибки, неиспользуемые импорты, сортировка импортов, предупреждения
+ignore = []
