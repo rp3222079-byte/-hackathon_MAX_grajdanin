@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Панель управляющей компании — Домовой</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <a class="wordmark" href="/">Домовой <span>отключения и обращения в УК</span></a>
+      <nav class="nav">
+        <a href="/">Отключения</a>
+        <a href="/appeal">Написать в УК</a>
+        <a href="/admin" aria-current="page">Панель УК</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1 class="page-title">Обращения жильцов</h1>
+      <p class="page-lead">
+        Здесь видно все обращения и можно менять их статус. Жилец увидит изменение
+        в боте.
+      </p>
+
+      <form class="form" id="login-form">
+        <div class="field">
+          <label for="token">Токен доступа</label>
+          <input id="token" name="token" type="password" required autocomplete="current-password">
+          <span class="hint">Значение ADMIN_TOKEN из файла .env.</span>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Войти</button>
+        </div>
+        <div class="notice" id="login-notice" hidden data-state="error" role="status"></div>
+      </form>
+
+      <section id="panel" hidden>
+        <div class="section-head">
+          <h2 class="visually-hidden">Список обращений</h2>
+          <div class="field">
+            <label for="status-filter">Показывать</label>
+            <select id="status-filter">
+              <option value="">все обращения</option>
+              <option value="new">только созданные</option>
+              <option value="sent">отправленные в УК</option>
+              <option value="in_progress">в работе</option>
+              <option value="resolved">решённые</option>
+              <option value="failed">не отправленные</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Номер</th>
+                <th>Создано</th>
+                <th>Адрес</th>
+                <th>Тема</th>
+                <th>Текст</th>
+                <th>УК</th>
+                <th>Статус</th>
+                <th>Изменить</th>
+              </tr>
+            </thead>
+            <tbody id="appeals-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      Демо-панель хакатона. В реальном сервисе здесь была бы авторизация по сотрудникам УК.
+    </footer>
+  </div>
+
+  <script type="module" src="/static/js/admin.js"></script>
+</body>
+</html>
