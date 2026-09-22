@@ -1,0 +1,6 @@
+name,email,phone,website,city,street,houses
+"УК «Центральная»",uk-centralnaya@example.ru,+7 495 000-00-01,https://example.ru/centralnaya,Москва,"улица Ленина","1,2,3,4,5,7,9,11,12,12к2,15"
+"УК «Центральная»",uk-centralnaya@example.ru,+7 495 000-00-01,https://example.ru/centralnaya,Москва,"Садовая улица","5,7,9,10,11"
+"ЖЭК-7",gek7@example.ru,+7 495 000-00-02,https://example.ru/gek7,Москва,"проспект Мира","12,12к2,14,16,18"
+"ТСЖ «Рассвет»",tsj-rassvet@example.ru,+7 495 000-00-03,,Москва,"улица 8 Марта","1,3,5,7"
+"УК «Северная»",uk-severnaya@example.ru,+7 495 000-00-04,https://example.ru/severnaya,Москва,"Парковая улица","2,4,6,8,10"

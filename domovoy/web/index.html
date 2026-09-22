@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Домовой — отключения воды и света</title>
+  <meta name="description" content="Проверьте, будут ли по вашему адресу отключать воду или электричество, и напишите в управляющую компанию.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <a class="wordmark" href="/">Домовой <span>отключения и обращения в УК</span></a>
+      <nav class="nav">
+        <a href="/" aria-current="page">Отключения</a>
+        <a href="/appeal">Написать в УК</a>
+        <a href="/admin">Панель УК</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="check">
+        <h1>Узнайте, будет ли у вас вода и свет</h1>
+        <p class="lead">
+          Введите улицу и дом. Данные собираются с сайта поставщика услуг и обновляются
+          каждые полчаса. Чтобы получать предупреждения заранее, добавьте адрес в боте MAX.
+        </p>
+
+        <form class="check-form" id="check-form">
+          <div class="field">
+            <label for="street">Улица</label>
+            <input id="street" name="street" type="text" placeholder="улица Ленина" required autocomplete="address-line1">
+          </div>
+          <div class="field">
+            <label for="house">Дом</label>
+            <input id="house" name="house" type="text" placeholder="12к2" required>
+          </div>
+          <button type="submit">Проверить адрес</button>
+        </form>
+
+        <div class="verdict" id="verdict" hidden data-state="clear" role="status">
+          <h2></h2>
+          <p></p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Ближайшие работы в городе</h2>
+          <div class="filters" id="filters">
+            <button class="chip" type="button" data-filter="all" aria-pressed="true">Все</button>
+            <button class="chip" type="button" data-filter="water" aria-pressed="false">Вода</button>
+            <button class="chip" type="button" data-filter="electricity" aria-pressed="false">Электричество</button>
+            <button class="chip" type="button" data-filter="heating" aria-pressed="false">Отопление</button>
+          </div>
+        </div>
+
+        <ul class="timeline" id="timeline">
+          <li class="empty"><strong>Загружаем данные</strong>Секунду.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="foot">
+      Проект хакатона, трек «Умный город». Бот работает в MAX, данные об отключениях
+      берутся с сайта поставщика услуг.
+    </footer>
+  </div>
+
+  <script type="module" src="/static/js/outages.js"></script>
+</body>
+</html>
