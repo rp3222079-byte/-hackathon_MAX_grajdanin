@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: domovoy
+      POSTGRES_PASSWORD: domovoy
+      POSTGRES_DB: domovoy
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U domovoy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://domovoy:domovoy@db:5432/domovoy
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outbox:/app/outbox
+
+  bot:
+    build: .
+    command: ["python", "-m", "app.bot.main"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://domovoy:domovoy@db:5432/domovoy
+      API_BASE_URL: http://api:8000
+    depends_on:
+      - api
+
+  parser:
+    build: .
+    command: ["python", "-m", "app.parser.runner"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://domovoy:domovoy@db:5432/domovoy
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
