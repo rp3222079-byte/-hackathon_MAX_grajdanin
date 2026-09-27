@@ -58,3 +58,10 @@ STATUS_LABELS = {
     "resolved": "решено",
     "failed": "не отправлено",
 }
+
+BTN_SKIP_PHOTO = "Пропустить"
+BTN_CONFIRM_YES = "Отправить"
+BTN_CONFIRM_NO = "Отменить"
+
+def normalize_input(text: str) -> str:
+    return text.strip().lower()
