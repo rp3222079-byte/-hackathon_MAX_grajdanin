@@ -12,9 +12,25 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models import UTILITY_ELECTRICITY, UTILITY_TYPES, UTILITY_WATER
+from app.models import (
+    APPEAL_STATUS_FAILED,
+    APPEAL_STATUS_IN_PROGRESS,
+    APPEAL_STATUS_NEW,
+    APPEAL_STATUS_RESOLVED,
+    APPEAL_STATUS_SENT,
+    UTILITY_ELECTRICITY,
+    UTILITY_TYPES,
+    UTILITY_WATER,
+)
 
 UtilityName = Literal[UTILITY_WATER, UTILITY_ELECTRICITY]
+AppealStatus = Literal[
+    APPEAL_STATUS_NEW,
+    APPEAL_STATUS_SENT,
+    APPEAL_STATUS_IN_PROGRESS,
+    APPEAL_STATUS_RESOLVED,
+    APPEAL_STATUS_FAILED,
+]
 
 
 class ORMModel(BaseModel):
