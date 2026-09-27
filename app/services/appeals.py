@@ -13,6 +13,7 @@ from app.models import (
     CompanyHouse,
     ManagementCompany,
 )
+from app.services.addresses import normalize_street
 
 APPEAL_NUMBER_FORMAT = "DM-{:05d}"
 
@@ -35,17 +36,23 @@ def format_address_text(address: Address) -> str:
 
 
 def find_company_for_address(db: Session, address: Address) -> ManagementCompany | None:
-    """УК, которой закреплён дом жильца; None — если дома в справочнике нет."""
-    house = db.scalar(
-        select(CompanyHouse).where(
-            CompanyHouse.city == address.city,
-            CompanyHouse.street == address.street,
-            CompanyHouse.house_number == address.house_number,
-        )
-    )
-    if house is None:
-        return None
-    return db.get(ManagementCompany, house.company_id)
+    """УК, которой закреплён дом жильца; None — если дома в справочнике нет.
+
+    Улица сравнивается через normalize_street: жилец пишет «ул. Ленина»,
+    а в справочнике «улица Ленина» — это один и тот же дом.
+    """
+    houses = db.scalars(
+        select(CompanyHouse).where(CompanyHouse.house_number == address.house_number)
+    ).all()
+    city = address.city.strip().lower()
+    street = normalize_street(address.street)
+    for house in houses:
+        if house.city.strip().lower() != city or normalize_street(house.street) != street:
+            continue
+        if address.house_corpus and house.house_corpus != address.house_corpus:
+            continue
+        return db.get(ManagementCompany, house.company_id)
+    return None
 
 
 def create_appeal(
