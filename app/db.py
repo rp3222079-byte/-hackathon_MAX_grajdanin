@@ -13,9 +13,13 @@ from collections.abc import Iterator
 
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.config import settings
 from app.migrations import run_migrations
+
+# База в памяти: без StaticPool каждое соединение получало бы свою пустую базу
+IN_MEMORY_URLS = ("sqlite://", "sqlite:///:memory:")
 
 
 def create_db_engine(url: str | None = None) -> Engine:
@@ -25,6 +29,8 @@ def create_db_engine(url: str | None = None) -> Engine:
     options: dict[str, object] = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
         options["connect_args"] = {"check_same_thread": False}
+    if url in IN_MEMORY_URLS:
+        options["poolclass"] = StaticPool
 
     engine = create_engine(url, **options)
 
