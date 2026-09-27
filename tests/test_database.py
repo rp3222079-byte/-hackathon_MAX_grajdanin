@@ -107,6 +107,20 @@ class TestScenarios(unittest.TestCase):
         self.add_address(self.add_user("1001"))
         self.add_address(self.add_user("1002"), house_number=11)
 
+    def test_house_with_corpus_is_separate_address(self):
+        user = self.add_user()
+        self.add_address(user, house_number=12)
+        address = Address(
+            user_id=user.id,
+            city="Москва",
+            street="Ленина",
+            house_number=12,
+            house_corpus="к2",
+        )
+        self.db.add(address)
+        self.db.commit()
+        self.assertEqual(address.house_corpus, "к2")
+
     def test_deleting_user_removes_addresses(self):
         user = self.add_user()
         self.add_address(user)
@@ -152,6 +166,25 @@ class TestScenarios(unittest.TestCase):
         self.db.add(appeal)
         self.db.commit()
         self.assertEqual(appeal.company.name, "УК Ленина 11")
+
+    def test_company_cannot_have_same_house_twice(self):
+        company = ManagementCompany(
+            name="УК Ленина 11", email="uk@example.ru", city="Москва"
+        )
+        self.db.add(company)
+        self.db.commit()
+        for _ in range(2):
+            self.db.add(
+                CompanyHouse(
+                    company_id=company.id,
+                    city="Москва",
+                    street="Ленина",
+                    house_number=11,
+                )
+            )
+        with self.assertRaises(IntegrityError):
+            self.db.commit()
+        self.db.rollback()
 
     def test_same_outage_from_source_saved_once(self):
         starts_at = datetime(2026, 9, 28, 10, 0)
