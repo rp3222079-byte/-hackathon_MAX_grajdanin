@@ -78,23 +78,23 @@ class TestApi(unittest.TestCase):
             )
             db.commit()
 
-    def add_company(self) -> ManagementCompany:
-        with Session(self.engine, expire_on_commit=False) as db:
+    def add_company(self) -> None:
+        with Session(self.engine) as db:
             company = ManagementCompany(
                 name="УК Ленина", email="uk@example.ru", city="Новосибирск"
             )
             db.add(company)
             db.flush()
+            # в справочнике улица написана полностью, жилец пишет «ул.»
             db.add(
                 CompanyHouse(
                     company_id=company.id,
                     city="Новосибирск",
-                    street="ул. Ленина",
+                    street="улица Ленина",
                     house_number=11,
                 )
             )
             db.commit()
-            return company
 
     def company(self) -> ManagementCompany:
         with Session(self.engine) as db:
@@ -266,7 +266,7 @@ class TestAppeals(TestApi):
         self.assertEqual(appeal["status"], "new")
         self.assertEqual(appeal["address_text"], "Новосибирск, ул. Ленина, 11")
 
-    def test_company_found_by_house(self):
+    def test_company_found_despite_street_prefix(self):
         user = self.create_user()
         address = self.add_address(user["id"])
         response = self.client.post(
