@@ -170,7 +170,16 @@ class CompanyHouse(Base):
 
     __tablename__ = "company_houses"
     __table_args__ = (
-        UniqueConstraint("company_id", "city", "street", "house_number", name="uq_company_houses_place"),
+        # Один дом нельзя закрепить за компанией дважды, корпус учитывается
+        Index(
+            "uq_company_houses_place",
+            "company_id",
+            "city",
+            "street",
+            "house_number",
+            text("coalesce(house_corpus, '')"),
+            unique=True,
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
