@@ -8,10 +8,13 @@ SQLAlchemy, поэтому у них включён from_attributes.
 выглядит типовой запрос.
 """
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models import UTILITY_TYPES
+from app.models import UTILITY_ELECTRICITY, UTILITY_TYPES, UTILITY_WATER
+
+UtilityName = Literal[UTILITY_WATER, UTILITY_ELECTRICITY]
 
 
 class ORMModel(BaseModel):
