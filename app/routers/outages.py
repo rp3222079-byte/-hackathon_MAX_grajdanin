@@ -1,12 +1,13 @@
 """Отключения: список и фильтр по адресу.
 
 Фильтр по дому идёт через parse_house_list, потому что список домов
-хранится строкой источника: «1-15, 12к2».
+хранится строкой источника: «1-15, 12к2». Город и улица сравниваются
+на Python: lower() в SQLite не понимает кириллицу.
 """
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -36,12 +37,10 @@ def list_outages(
 ) -> list[Outage]:
     """Отдаёт отключения, новые сверху.
 
-    С городом, ресурсом и датами фильтр делает база, а с улицей и домом —
-    Python: список домов лежит в строке и разбирается на ходу.
+    Ресурс и даты отсекает база, а город, улицу и дом — Python:
+    список домов лежит в строке и разбирается на ходу.
     """
     query = select(Outage)
-    if city:
-        query = query.where(func.lower(Outage.city) == city.strip().lower())
     if utility:
         query = query.where(Outage.utility == utility)
     if starts_after:
@@ -50,9 +49,9 @@ def list_outages(
         query = query.where(Outage.starts_at <= starts_before)
     query = query.order_by(Outage.starts_at.desc(), Outage.id.desc())
 
-    if street or house_number is not None:
+    if city or street or house_number is not None:
         rows = db.scalars(query).all()
-        found = [row for row in rows if hits_house(row, street, house_number, house_corpus)]
+        found = [row for row in rows if matches_place(row, city, street, house_number, house_corpus)]
         return found[offset : offset + limit]
 
     return list(db.scalars(query.offset(offset).limit(limit)))
@@ -67,8 +66,16 @@ def get_outage(outage_id: int, db: Session = Depends(get_db)) -> Outage:
     return outage
 
 
-def hits_house(outage: Outage, street: str | None, house_number: int | None, house_corpus: str | None) -> bool:
-    """Задевает ли отключение этот дом: улица совпала и дом есть в списке."""
+def matches_place(
+    outage: Outage,
+    city: str | None,
+    street: str | None,
+    house_number: int | None,
+    house_corpus: str | None,
+) -> bool:
+    """Задевает ли отключение этот адрес: город, улица совпали и дом есть в списке."""
+    if city and outage.city.strip().lower() != city.strip().lower():
+        return False
     if street and normalize_street(street) != normalize_street(outage.street):
         return False
     if house_number is None:
