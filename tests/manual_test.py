@@ -1,5 +1,5 @@
-from app.bot import texts, keyboards, handlers
-import time
+from app.bot import texts, keyboards, handlers, states
+
 def route(user_id, message_text):
     normalized = texts.normalize_input(message_text)
 
@@ -20,8 +20,11 @@ def route(user_id, message_text):
     else:
         return texts.UNKNOWN, keyboards.main_menu()
 
+
 if __name__ == "__main__":
-    print("Бот запущен (заглушка, ждём токен MAX)")
+    fake_user_id = 1
     while True:
-        time.sleep(10)
-        print("bot: жив, жду токен для подключения к MAX API")
+        user_input = input("Вы: ")
+        reply_text, reply_keyboard = route(fake_user_id, user_input)
+        print("Бот:", reply_text)
+        print("Клавиатура:", reply_keyboard)
