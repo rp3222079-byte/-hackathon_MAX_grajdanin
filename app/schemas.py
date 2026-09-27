@@ -40,7 +40,9 @@ class ORMModel(BaseModel):
 
 
 def _strip(value: str | None) -> str | None:
-    return value.strip() or None if value is not None else None
+    if value is None:
+        return None
+    return value.strip() or None
 
 
 class UserCreate(BaseModel):

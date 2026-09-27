@@ -47,7 +47,6 @@ app = FastAPI(
     description=DESCRIPTION,
     version="0.1.0",
     lifespan=lifespan,
-    contact={"name": "Домовой"},
 )
 
 app.include_router(users.router)
