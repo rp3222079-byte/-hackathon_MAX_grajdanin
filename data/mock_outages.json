@@ -1,0 +1,56 @@
+[
+  {
+    "utility": "water",
+    "city": "Новосибирск",
+    "street": "улица Ленина",
+    "houses_raw": "1-15",
+    "starts_in_hours": 18,
+    "duration_hours": 9,
+    "reason": "Плановая замена участка трубопровода"
+  },
+  {
+    "utility": "electricity",
+    "city": "Новосибирск",
+    "street": "проспект Мира",
+    "houses_raw": "12, 12к2, 14",
+    "starts_in_hours": 2,
+    "duration_hours": 4,
+    "reason": "Аварийные работы на кабельной линии"
+  },
+  {
+    "utility": "water",
+    "city": "Новосибирск",
+    "street": "улица Дурова",
+    "houses_raw": "2, 4, 6, 8",
+    "starts_in_hours": 30,
+    "duration_hours": 6,
+    "reason": "Замена запорной арматуры в подвале"
+  },
+  {
+    "utility": "electricity",
+    "city": "Новосибирск",
+    "street": "Красный проспект",
+    "houses_raw": "1, 3, 5",
+    "starts_in_hours": -1,
+    "duration_hours": 5,
+    "reason": "Плановый ремонт подстанции"
+  },
+  {
+    "utility": "water",
+    "city": "Новосибирск",
+    "street": "улица Заречная",
+    "houses_raw": "1, 3, 5, 7",
+    "starts_in_hours": 72,
+    "duration_hours": 8,
+    "reason": "Профилактическая промывка водопровода"
+  },
+  {
+    "utility": "electricity",
+    "city": "Новосибирск",
+    "street": "улица Гоголя",
+    "houses_raw": "1, 3, 5, 7",
+    "starts_in_hours": 5,
+    "duration_hours": 3,
+    "reason": "Ремонт участка линии электропередачи"
+  }
+]
