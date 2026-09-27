@@ -1,0 +1,11 @@
+name,email,phone,website,city,street,houses
+"УК «Сибирь»",uk-sib@example.ru,+7 383 300-00-01,https://example.ru/sibir,Новосибирск,"улица Ленина","1-15"
+"УК «Сибирь»",uk-sib@example.ru,+7 383 300-00-01,https://example.ru/sibir,Новосибирск,"улица Гоголя","1,3,5,7"
+"УК «Центральная»",uk-centralnaya@example.ru,+7 383 300-00-02,https://example.ru/centralnaya,Новосибирск,"Красный проспект","1,3,5,10,12"
+"УК «Центральная»",uk-centralnaya@example.ru,+7 383 300-00-02,https://example.ru/centralnaya,Новосибирск,"улица Вокзальная","5,7,9"
+"ЖЭК-5",gek5@example.ru,+7 383 300-00-03,https://example.ru/gek5,Новосибирск,"проспект Мира","12,12к2,14,16,18"
+"ЖЭК-5",gek5@example.ru,+7 383 300-00-03,https://example.ru/gek5,Новосибирск,"улица Якушева","3,5,7"
+"ТСЖ «Сибиряк»",tsj-sibiryak@example.ru,+7 383 300-00-04,,Новосибирск,"улица Дурова","2,4,6,8"
+"ТСЖ «Сибиряк»",tsj-sibiryak@example.ru,+7 383 300-00-04,,Новосибирск,"улица Крылова","21,23,25"
+"УК «Заречная»",uk-zarechnaya@example.ru,+7 383 300-00-05,https://example.ru/zarechnaya,Новосибирск,"улица Заречная","1,3,5,7"
+"УК «Заречная»",uk-zarechnaya@example.ru,+7 383 300-00-05,https://example.ru/zarechnaya,Новосибирск,"улица Шевченко","8,10,12"
