@@ -81,16 +81,32 @@ def parse_city(city: str, out: Path, cache: Path, *, force: bool = False) -> Non
     logger.info("Качаю сведения об объектах жилищного фонда")
     houses = downloader.download_ozhf_csv(cache, force=force, region=city)
 
+    csv_path = out / f"{downloader.slug(city)}.csv"
+    json_path = out / f"{downloader.slug(city)}.json"
+    if not force and _is_fresh(json_path, (providers, houses)):
+        logger.info("Справочник %s свежее выгрузок, разбор пропускаю", json_path.name)
+        return
+
     logger.info("Собираю справочник по городу %s", city)
     directory = build_directory(providers, houses, city)
     total_houses = sum(company.houses_count for company in directory.values())
     logger.info("Компаний: %s, домов: %s", len(directory), total_houses)
 
-    csv_path = out / f"{downloader.slug(city)}.csv"
-    json_path = out / f"{downloader.slug(city)}.json"
     rows = export.write_csv(directory, csv_path)
     companies = export.write_json(directory, json_path)
     logger.info("Записано %s строк в %s и %s компаний в %s", rows, csv_path, companies, json_path)
+
+
+def _is_fresh(result: Path, sources: tuple[Path, ...]) -> bool:
+    """Собран ли справочник позже всех выгрузок, из которых он сделан.
+
+    Разбор выгрузки занимает минуты, а повторять его ради того же
+    города незачем: если выгрузки не обновились, результат уже есть.
+    """
+    if not result.exists():
+        return False
+    built = result.stat().st_mtime
+    return all(source.exists() and source.stat().st_mtime <= built for source in sources)
 
 
 def _last_result(out: Path | None) -> Path | None:

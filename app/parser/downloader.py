@@ -130,8 +130,30 @@ def remote_size(url: str) -> int:
 
 def read_ozhf_rows(csv_path: Path) -> Iterator[dict[str, str]]:
     """Строки csv объектов жилищного фонда; разделитель — вертикальная черта."""
+    yield from read_ozhf_columns(csv_path, None)
+
+
+def read_ozhf_columns(
+    csv_path: Path, columns: "list[str] | None"
+) -> Iterator[tuple[str, ...] | dict[str, str]]:
+    """Строки csv, где нужны только перечисленные колонки.
+
+    Словарь на каждую строку обходится дорого, а в выгрузке их
+    1,8 миллиона, поэтому по именам колонок берутся их номера и
+    дальше строки разбираются по индексам. Без columns отдаётся
+    словарь — так читать выгрузку удобнее в отладке.
+    """
     with csv_path.open(encoding="utf-8", errors="replace", newline="") as handle:
-        yield from csv.DictReader(handle, delimiter="|")
+        reader = csv.reader(handle, delimiter="|")
+        header = next(reader, [])
+        if columns is None:
+            yield from (dict(zip(header, row)) for row in reader)
+            return
+        index = [header.index(name) for name in columns]
+        width = max(index)
+        for row in reader:
+            if len(row) > width:
+                yield tuple(row[position] for position in index)
 
 
 def parts_count(size: int) -> int:

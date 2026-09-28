@@ -29,6 +29,8 @@ INLINE_XLSX_HEAD = (
     '<?xml version="1.0" encoding="UTF-8"?>'
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
     '<sheetData>'
+)
+INLINE_XLSX_TITLE = (
     '<row r="2"><c r="A2" t="inlineStr"><is><t>Реестр поставщиков информации</t></is></c></row>'
 )
 INLINE_XLSX_TAIL = "</sheetData></worksheet>"
@@ -40,10 +42,14 @@ OZHF_HEADER = (
 )
 
 
-def make_xlsx(path: Path, rows: list[list[str]]) -> Path:
-    """Книга с одной строкой заголовка и строками данных."""
-    body = INLINE_XLSX_HEAD
-    for number, row in enumerate(rows, start=3):
+def make_xlsx(path: Path, rows: list[list[str]], *, title: bool = True) -> Path:
+    """Книга с одной строкой заголовка и строками данных.
+
+    title добавляет строку с названием файла: в книге ГИС ЖКХ она стоит
+    над шапкой, и разбор обязан её перешагнуть.
+    """
+    body = INLINE_XLSX_HEAD + (INLINE_XLSX_TITLE if title else "")
+    for number, row in enumerate(rows, start=3 if title else 2):
         cells = "".join(
             f'<c r="{chr(ord("A") + index)}{number}" t="inlineStr"><is><t>{value}</t></is></c>'
             for index, value in enumerate(row)
@@ -147,6 +153,70 @@ class TestParseAddress(unittest.TestCase):
         stored = parse_address("630001, Новосибирская обл, г. Новосибирск, ул. Кирова, д. 27").street
         for written in ("улица Кирова", "ул. Кирова", "Улица Кирова", "ул.Кирова"):
             self.assertEqual(normalize_street(written), normalize_street(stored))
+
+
+class TestXlsxFilters(unittest.TestCase):
+    def test_берёт_только_нужные_колонки(self):
+        with TemporaryDirectory() as folder:
+            path = make_xlsx(
+                Path(folder) / "p.xlsx",
+                [["Полное наименование", "ОГРН", "Телефон"],
+                 ["ООО Первый", "1", "100"],
+                 ["ООО Второй", "2", "200"]],
+            )
+            rows = list(xlsx.read_dicts(path, columns=("ОГРН", "Телефон")))
+        self.assertEqual(rows, [{"ОГРН": "1", "Телефон": "100"}, {"ОГРН": "2", "Телефон": "200"}])
+
+    def test_отбрасывает_строки_не_из_списка(self):
+        with TemporaryDirectory() as folder:
+            path = make_xlsx(
+                Path(folder) / "p.xlsx",
+                [["Полное наименование", "ОГРН"], ["Нужная", "1"], ["Лишняя", "2"]],
+            )
+            rows = list(xlsx.read_dicts(path, key="ОГРН", keys={"1"}))
+        self.assertEqual(rows, [{"Полное наименование": "Нужная", "ОГРН": "1"}])
+
+    def test_неизвестная_колонка_не_ломает_разбор(self):
+        with TemporaryDirectory() as folder:
+            path = make_xlsx(
+                Path(folder) / "p.xlsx", [["ОГРН", "Телефон"], ["1", "300"]],
+            )
+            rows = list(xlsx.read_dicts(path, columns=("ОГРН", "КолонкиНет")))
+        self.assertEqual(rows, [{"ОГРН": "1"}])
+
+    def test_лист_в_одну_графу_читается(self):
+        with TemporaryDirectory() as folder:
+            path = make_xlsx(Path(folder) / "p.xlsx", [["ОГРН"], ["1"], ["2"]], title=False)
+            self.assertEqual(xlsx.read_header(path), ["ОГРН"])
+            rows = list(xlsx.read_dicts(path))
+        self.assertEqual(rows, [{"ОГРН": "1"}, {"ОГРН": "2"}])
+
+
+class TestOzhfColumns(unittest.TestCase):
+    def test_отдаёт_только_запрошенные_графы(self):
+        with TemporaryDirectory() as folder:
+            path = make_ozhf(
+                Path(folder) / "o.csv",
+                [
+                    "630001, Новосибирская обл, г. Новосибирск, ул. Кирова, д. 27|id|Многоквартирный|УО|1025400000001",
+                    "короткая|строка",
+                ],
+            )
+            rows = list(
+                downloader.read_ozhf_columns(path, ["Тип дома", "ОГРН организации, осуществляющей управление домом"])
+            )
+        self.assertEqual(rows, [("Многоквартирный", "1025400000001")])
+
+    def test_тот_же_дом_не_повторяется(self):
+        rows = [
+            f"630001, Новосибирская обл, г. Новосибирск, ул. Кирова, д. 27|{index}|Многоквартирный|УО|1025400000001"
+            for index in range(50)
+        ]
+        with TemporaryDirectory() as folder:
+            path = make_ozhf(Path(folder) / "o.csv", rows)
+            houses = list(read_houses(path, "Новосибирск"))
+        self.assertEqual(len(houses), 1)
+        self.assertEqual(houses[0].number, 27)
 
 
 class TestReadSources(unittest.TestCase):

@@ -149,9 +149,19 @@ class CompanyDirectory:
         return sum(len(items) for items in self.streets.values())
 
 
-def read_providers(xlsx_path: Path) -> Iterator[Provider]:
-    """Организации из реестра поставщиков информации."""
-    for row in xlsx.read_dicts(xlsx_path):
+def read_providers(xlsx_path: Path, wanted: set[str] | None = None) -> Iterator[Provider]:
+    """Организации из реестра поставщиков информации.
+
+    wanted — ОГРН, которые нужны. Без него читается весь реестр, но
+    для одного города это лишние 200 тысяч строк и лишние словари.
+    """
+    rows = xlsx.read_dicts(
+        xlsx_path,
+        columns=(COL_FULL_NAME, COL_SHORT_NAME, COL_OGRN, COL_SITE, COL_PHONE, COL_EMAIL, COL_FUNCTION),
+        key=COL_OGRN,
+        keys=wanted,
+    )
+    for row in rows:
         ogrn = (row.get(COL_OGRN) or "").strip()
         if not ogrn.isdigit():
             continue
@@ -169,17 +179,28 @@ def read_providers(xlsx_path: Path) -> Iterator[Provider]:
 
 
 def read_houses(csv_path: Path, city: str) -> Iterator[House]:
-    """Многоквартирные дома выбранного города с управляющей организацией."""
+    """Многоквартирные дома выбранного города с управляющей организацией.
+
+    Выгрузка построчная по помещениям, поэтому один дом в ней
+    встречается сотни и тысячи раз. Адрес разбирается только один
+    раз на дом: повторы отсекаются по паре «адрес + ОГРН».
+    """
     wanted = city.strip().lower()
-    for row in downloader.read_ozhf_rows(csv_path):
-        if (row.get(OZHF_MANAGEMENT) or "").strip() not in MANAGED_BY_ORGANIZATION:
+    seen: set[tuple[str, str]] = set()
+    columns = [OZHF_ADDRESS, OZHF_HOUSE_TYPE, OZHF_MANAGEMENT, OZHF_OGRN]
+    for address, house_type, management, ogrn in downloader.read_ozhf_columns(csv_path, columns):
+        if management.strip() not in MANAGED_BY_ORGANIZATION:
             continue
-        if (row.get(OZHF_HOUSE_TYPE) or "").strip() != APARTMENT_HOUSE:
+        if house_type.strip() != APARTMENT_HOUSE:
             continue
-        ogrn = (row.get(OZHF_OGRN) or "").strip()
+        ogrn = ogrn.strip()
         if not ogrn.isdigit():
             continue
-        place = parse_address(row.get(OZHF_ADDRESS) or "")
+        key = (address, ogrn)
+        if key in seen:
+            continue
+        seen.add(key)
+        place = parse_address(address)
         if place is None or place.city.lower() != wanted:
             continue
         yield House(
@@ -188,7 +209,7 @@ def read_houses(csv_path: Path, city: str) -> Iterator[House]:
             number=place.number,
             corpus=place.corpus,
             ogrn=ogrn,
-            house_type=(row.get(OZHF_HOUSE_TYPE) or "").strip(),
+            house_type=house_type.strip(),
         )
 
 
@@ -199,25 +220,32 @@ def build_directory(
 
     Дом без организации в реестре поставщиков пропускаем: отправлять
     обращение некуда, а company.email в таблице обязателен.
+
+    Сначала читаются дома и собирается список нужных ОГРН, потом
+    реестр поставщиков — так его приходится разбирать осмысленно
+    только для нужных организаций.
     """
-    providers = {provider.ogrn: provider for provider in read_providers(providers_path)}
-    directory: dict[str, CompanyDirectory] = {}
+    found: dict[str, list[House]] = {}
     for house in read_houses(houses_path, city):
-        provider = providers.get(house.ogrn)
+        found.setdefault(house.ogrn, []).append(house)
+
+    providers = {provider.ogrn: provider for provider in read_providers(providers_path, set(found))}
+    directory: dict[str, CompanyDirectory] = {}
+    for ogrn, houses in found.items():
+        provider = providers.get(ogrn)
         if provider is None:
             continue
-        company = directory.get(provider.ogrn)
-        if company is None:
-            company = CompanyDirectory(
-                name=provider.name,
-                email=provider.email or f"ogrn{provider.ogrn}@gis.jkh",
-                phone=provider.phone,
-                website=provider.website,
-                city=house.city,
-                ogrn=provider.ogrn,
-            )
-            directory[provider.ogrn] = company
-        company.add(house)
+        company = CompanyDirectory(
+            name=provider.name,
+            email=provider.email or f"ogrn{provider.ogrn}@gis.jkh",
+            phone=provider.phone,
+            website=provider.website,
+            city=houses[0].city,
+            ogrn=provider.ogrn,
+        )
+        for house in houses:
+            company.add(house)
+        directory[ogrn] = company
     return directory
 
 
