@@ -25,8 +25,7 @@ yarn-error.log*
 # Environment variables (ключи API)
 .env
 .env.local
-frontend/.env
-backend/.env
+
 
 # IDE редакторы
 .vscode/
