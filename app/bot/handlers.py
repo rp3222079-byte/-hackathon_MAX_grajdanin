@@ -141,4 +141,4 @@ def handle_current_outage(message_text) :
         reply_text = "\n\n".join(parts)
 
     reply_keyboard = keyboards.main_menu()
-    return reply_text, reply_keyboard        
+    return reply_text, reply_keyboard 
