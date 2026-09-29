@@ -1,5 +1,5 @@
 # app/bot/handlers.py
-from app.bot import api, keyboards, profiles, states, texts
+from app.bot import api, appeals_tracker, keyboards, profiles, states, texts
 from app.services import mailer
 from app.services.addresses import parse_house_fragment
 
@@ -74,6 +74,19 @@ def _format_outage(outage):
     )
 
 
+def handle_my_appeals(user_id, message_text):
+    appeals = api.list_appeals(user_id)
+    appeals_tracker.check_changes(user_id, appeals)  # запомнить статусы, увиденные сейчас
+    if not appeals:
+        return texts.NO_APPEALS, keyboards.main_menu()
+
+    lines = "\n".join(
+        f"• №{a['number']} — {a['subject']} — {texts.STATUS_LABELS.get(a['status'], a['status'])}"
+        for a in appeals
+    )
+    return texts.MY_APPEALS.format(appeals=lines), keyboards.main_menu()
+
+
 # --- диалог адреса (и первого, и «Добавить адрес») ---
 def _address_dialog(user_id, message_text, state):
     step = state["step"]
@@ -139,6 +152,8 @@ def handle_appeal(user_id, message_text):
 def handle_appeal_dialog(user_id, message_text, state):
     if state["step"].startswith("addr_"):
         return _address_dialog(user_id, message_text, state)
+    if state["step"] == "waiting_hours":
+        return _hours_step(user_id, message_text)
 
     step = state["step"]
     data = state["data"]
@@ -239,7 +254,16 @@ def _appeal_confirm_step(user_id, normalized, data):
             )
         except mailer.MailError as error:
             print("send_appeal error:", error, flush=True)
+            try:
+                api.update_appeal_status(appeal["number"], "failed")
+            except api.ApiError as status_error:
+                print("update_appeal_status error:", status_error, flush=True)
             return texts.APPEAL_SEND_FAILED, keyboards.confirm_menu()
+
+        try:
+            api.update_appeal_status(appeal["number"], "sent")
+        except api.ApiError as error:
+            print("update_appeal_status error:", error, flush=True)
 
         states.clear_state(user_id)
         reply_text = texts.APPEAL_SENT.format(number=appeal["number"], company=company["name"])
@@ -250,3 +274,50 @@ def _appeal_confirm_step(user_id, normalized, data):
         return texts.APPEAL_CANCELLED, keyboards.main_menu()
 
     return texts.UNKNOWN, keyboards.confirm_menu()
+
+
+# --- настройки уведомлений ---
+def _settings_status_text(settings):
+    return texts.SETTINGS_STATUS.format(
+        title=texts.SETTINGS_TITLE,
+        water=texts.ON if settings["notify_water"] else texts.OFF,
+        electricity=texts.ON if settings["notify_electricity"] else texts.OFF,
+        hours=settings["notify_hours_before"],
+    )
+
+
+def handle_settings(user_id, message_text):
+    settings = api.get_settings(user_id)
+    return _settings_status_text(settings), keyboards.settings_menu()
+
+
+def handle_toggle_water(user_id, message_text):
+    settings = api.get_settings(user_id)
+    settings = api.update_settings(user_id, notify_water=not settings["notify_water"])
+    return _settings_status_text(settings), keyboards.settings_menu()
+
+
+def handle_toggle_electricity(user_id, message_text):
+    settings = api.get_settings(user_id)
+    settings = api.update_settings(user_id, notify_electricity=not settings["notify_electricity"])
+    return _settings_status_text(settings), keyboards.settings_menu()
+
+
+def handle_set_hours(user_id, message_text):
+    states.set_state(user_id, "waiting_hours")
+    return texts.ASK_HOURS, None
+
+
+def handle_unsubscribe_all(user_id, message_text):
+    api.update_settings(user_id, notify_outages=False, notify_water=False, notify_electricity=False)
+    return texts.UNSUBSCRIBED, keyboards.main_menu()
+
+
+def _hours_step(user_id, message_text):
+    value = message_text.strip()
+    if not value.isdigit() or not (0 <= int(value) <= 72):
+        return texts.ASK_HOURS, None
+    hours = int(value)
+    api.update_settings(user_id, notify_hours_before=hours)
+    states.clear_state(user_id)
+    return texts.HOURS_SAVED.format(hours=hours), keyboards.settings_menu()

@@ -7,3 +7,6 @@ def remember(user_id, name=None, username=None):
 
 def get(user_id):
     return _profiles.get(user_id)
+
+def all_user_ids():
+    return _profiles.keys()

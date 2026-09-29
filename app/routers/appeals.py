@@ -1,3 +1,4 @@
+from datetime import datetime
 """Обращения жильцов: создать и посмотреть.
 
 Письмо в УК отправляется отдельно (app/services/mailer.py), поэтому
@@ -11,7 +12,7 @@ from app.db import get_db
 from app.errors import NotFoundError
 from app.models import Appeal
 from app.routers.common import require_address, require_user
-from app.schemas import AppealCreate, AppealOut, AppealStatus
+from app.schemas import AppealCreate, AppealOut, AppealStatus, AppealStatusUpdate
 from app.services.appeals import create_appeal
 
 router = APIRouter(prefix="/appeals", tags=["обращения"])
@@ -59,6 +60,24 @@ def list_appeals(
     if status_filter:
         query = query.where(Appeal.status == status_filter)
     return list(db.scalars(query.order_by(Appeal.id.desc()).offset(offset).limit(limit)))
+
+
+@router.patch("/{number}", response_model=AppealOut, summary="Изменить статус обращения")
+def patch_appeal_status(number: str, payload: AppealStatusUpdate, db: Session = Depends(get_db)) -> Appeal:
+    """Меняет статус: sent/failed ставит бот сразу после отправки письма,
+    in_progress/resolved — управляющая компания по ответу на письмо."""
+    appeal = db.scalar(select(Appeal).where(Appeal.number == number))
+    if appeal is None:
+        raise NotFoundError(f"Обращение {number} не найдено")
+
+    appeal.status = payload.status
+    if payload.status == "sent" and appeal.sent_at is None:
+        appeal.sent_at = datetime.now()
+    if payload.status == "resolved" and appeal.resolved_at is None:
+        appeal.resolved_at = datetime.now()
+    db.commit()
+    db.refresh(appeal)
+    return appeal
 
 
 @router.get("/{number}", response_model=AppealOut, summary="Обращение по номеру")
