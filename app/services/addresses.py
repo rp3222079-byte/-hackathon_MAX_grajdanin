@@ -70,7 +70,7 @@ def parse_house_fragment(fragment: str) -> tuple[int, str | None] :
     corpus_part = fragment[i:]
     return int(number_part), corpus_part
 
-def expand_fragment(fragment : str) -> set[tuple[int, srt | None]]: 
+def expand_fragment(fragment : str) -> set[tuple[int, str | None]]: 
     fragment = fragment.strip()
     if "-" in fragment:
         start_str, end_str = fragment.split("-")

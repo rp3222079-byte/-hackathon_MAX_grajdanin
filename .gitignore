@@ -38,3 +38,6 @@ Thumbs.db
 
 # Логи
 *.log
+# Письма в режиме SMTP_DRY_RUN и кэш выгрузок ГИС ЖКХ
+outbox/
+parser_cache/
