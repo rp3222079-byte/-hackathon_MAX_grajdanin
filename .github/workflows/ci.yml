@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -t .
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Окружение из шаблона
+        run: cp .env.example .env
+      - name: Сборка образов (лимит кейса — 5 минут)
+        run: |
+          start=$(date +%s)
+          docker compose build
+          echo "Сборка заняла $(( $(date +%s) - start )) с"
+      - name: Запуск db и api
+        run: docker compose up -d --wait db api
+      - name: API отвечает, данные загружены, ключ проверяется
+        run: |
+          curl -fsS http://localhost:8000/health
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/appeals)" = 401
+          curl -fsS -H "X-API-Key: local-dev-token-change-me" http://localhost:8000/companies/cities | grep -q "Новосибирск"
+          curl -fsS -G -H "X-API-Key: local-dev-token-change-me" http://localhost:8000/outages \
+            --data-urlencode "city=Новосибирск" --data-urlencode "street=Ленина" \
+            --data-urlencode "house_number=11" | grep -q '"utility"'
+      - name: Образ бота доверяет сертификату MAX (platform-api2.max.ru)
+        run: |
+          docker compose run --rm --no-deps bot python -c "
+          import requests
+          from app.bot.tls import ca_bundle_path
+          try:
+              r = requests.get('https://platform-api2.max.ru/me', verify=ca_bundle_path(), timeout=20)
+          except requests.exceptions.SSLError:
+              raise
+          except requests.exceptions.ConnectionError as error:
+              print('MAX API недоступен из этой сети, TLS не проверен:', error)
+          else:
+              print('MAX API:', r.status_code)
+              assert r.status_code == 401, r.text
+          "
+      - name: Логи при ошибке
+        if: failure()
+        run: docker compose logs
+      - name: Остановка
+        if: always()
+        run: docker compose down -v

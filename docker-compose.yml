@@ -1,3 +1,11 @@
+# Все локальные компоненты «Домового» одной командой:
+#   cp .env.example .env   # и впишите MAX_BOT_TOKEN
+#   docker compose up --build
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://domovoy:domovoy@db:5432/domovoy
+  API_BASE_URL: http://api:8000
+
 services:
   db:
     image: postgres:16-alpine
@@ -11,17 +19,17 @@ services:
       test: ["CMD-SHELL", "pg_isready -U domovoy"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
+    restart: unless-stopped
 
   api:
     build: .
-    # справочник УК и демо-отключения загружаются при каждом старте, повтор не создаёт дублей
-    command: ["sh", "-c", "python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    # миграции и тестовые данные при каждом старте: повторный запуск дублей не создаёт
+    command: ["sh", "-c", "python -m app.seed && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     env_file: .env
-    environment:
-      DATABASE_URL: postgresql+psycopg://domovoy:domovoy@db:5432/domovoy
+    environment: *app-env
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -29,21 +37,27 @@ services:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
+    restart: unless-stopped
 
   bot:
     build: .
     command: ["python", "-m", "app.bot.main"]
     env_file: .env
     environment:
-      API_BASE_URL: http://api:8000
+      <<: *app-env
+      BOT_STATE_PATH: /app/state/bot_state.json
+    volumes:
+      - botstate:/app/state
+      # письма в режиме SMTP_DRY_RUN=true; скопировать к себе:
+      #   docker compose cp bot:/app/outbox ./outbox
+      - outbox:/app/outbox
     depends_on:
       api:
         condition: service_healthy
-    volumes:
-      # письма в режиме SMTP_DRY_RUN отправляет бот, поэтому outbox смонтирован к нему
-      - ./outbox:/app/outbox
     restart: unless-stopped
 
 volumes:
   pgdata:
+  botstate:
+  outbox:

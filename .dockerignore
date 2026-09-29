@@ -1,5 +1,6 @@
 .git
-.venv
+.gitignore
+.venv*
 venv
 __pycache__
 *.pyc
@@ -7,6 +8,7 @@ __pycache__
 *.db
 *.sqlite
 *.sqlite3
+bot_state.json
 outbox
 uploads
 parser_cache
@@ -14,4 +16,8 @@ data/nsk
 tests
 docs
 brand
+presentation
 *.md
+Dockerfile
+docker-compose.yml
+.dockerignore
