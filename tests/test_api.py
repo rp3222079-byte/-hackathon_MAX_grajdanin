@@ -100,8 +100,8 @@ class TestApi(unittest.TestCase):
         with Session(self.engine) as db:
             return db.scalar(select(ManagementCompany))
 
-    def create_user(self, telegram_id: str = "1001") -> dict:
-        response = self.client.post("/users", json={"telegram_id": telegram_id})
+    def create_user(self, max_user_id: str = "1001") -> dict:
+        response = self.client.post("/users", json={"max_user_id": max_user_id})
         self.assertEqual(response.status_code, 201)
         return response.json()
 
@@ -114,11 +114,11 @@ class TestApi(unittest.TestCase):
 class TestUsers(TestApi):
     def test_create_user(self):
         user = self.create_user()
-        self.assertEqual(user["telegram_id"], "1001")
+        self.assertEqual(user["max_user_id"], "1001")
         self.assertTrue(user["notify_outages"])
         self.assertEqual(user["addresses"], [])
 
-    def test_same_telegram_id_does_not_duplicate(self):
+    def test_same_max_user_id_does_not_duplicate(self):
         first = self.create_user("1001")
         second = self.create_user("1001")
         self.assertEqual(first["id"], second["id"])

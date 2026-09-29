@@ -147,7 +147,7 @@ class TestSeed(unittest.TestCase):
     def test_clear_removes_outages_and_notifications(self):
         seed.load_outages(self.db)
         outage_count = len(self.db.scalars(select(Outage)).all())
-        user = User(telegram_id="demo")
+        user = User(max_user_id="demo")
         self.db.add(user)
         self.db.flush()
         outage_id = self.db.scalars(select(Outage.id)).first()

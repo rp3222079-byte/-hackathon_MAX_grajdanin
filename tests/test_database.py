@@ -56,7 +56,7 @@ class TestMigrations(unittest.TestCase):
     def test_applied_versions_recorded(self):
         run_migrations(self.engine)
         with self.engine.connect() as conn:
-            self.assertEqual(applied_versions(conn), {1, 2, 3})
+            self.assertEqual(applied_versions(conn), {1, 2, 3, 4, 5})
 
     def test_выдуманные_почты_обнуляются(self):
         run_migrations(self.engine)
@@ -92,8 +92,8 @@ class TestScenarios(unittest.TestCase):
         self.db.close()
         self.engine.dispose()
 
-    def add_user(self, telegram_id: str = "1001") -> User:
-        user = User(telegram_id=telegram_id)
+    def add_user(self, max_user_id: str = "1001") -> User:
+        user = User(max_user_id=max_user_id)
         self.db.add(user)
         self.db.commit()
         return user
