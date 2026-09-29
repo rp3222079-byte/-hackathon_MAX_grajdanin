@@ -9,10 +9,14 @@ def main_menu():
 def category_menu():
     return [[category] for category in texts.CATEGORIES]
 
-
 def skip_photo_menu():
     return [[texts.BTN_SKIP_PHOTO]]
 
-
 def confirm_menu():
     return [[texts.BTN_CONFIRM_YES], [texts.BTN_CONFIRM_NO]]
+
+def contact_menu():
+    return [[texts.BTN_CONTACT_YES], [texts.BTN_CONTACT_NO]]
+
+def address_menu():
+    return [[texts.BTN_ADD_ADDRESS]] + main_menu()

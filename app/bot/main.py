@@ -1,40 +1,49 @@
+# app/bot/main.py
 import time
-from app.bot import texts, keyboards, handlers, states
+
+from app.bot import handlers, keyboards, profiles, states, texts
 from app.bot.client import MaxClient
+
 
 def route(user_id, message_text):
     normalized = texts.normalize_input(message_text)
 
+    if normalized == "/start":            # /start всегда выводит из любого диалога
+        states.clear_state(user_id)
+
     state = states.get_state(user_id)
     if state is not None:
-        return handlers.handle_appeal_dialog(user_id, normalized, state)
+        return handlers.handle_appeal_dialog(user_id, message_text, state)
 
     if normalized == "/start":
-        return handlers.handle_start(message_text)
+        return handlers.handle_start(user_id, message_text)
     elif normalized == "/help":
         return handlers.handle_help(message_text)
     elif normalized == texts.normalize_input(texts.BTN_MY_ADDRESS):
-        return handlers.handle_my_address(message_text)
+        return handlers.handle_my_address(user_id, message_text)
+    elif normalized == texts.normalize_input(texts.BTN_ADD_ADDRESS):
+        return handlers.handle_add_address(user_id, message_text)
     elif normalized == texts.normalize_input(texts.BTN_OUTAGES):
-        return handlers.handle_outages(message_text)
+        return handlers.handle_outages(user_id, message_text)
     elif normalized == texts.normalize_input(texts.BTN_APPEAL):
         return handlers.handle_appeal(user_id, message_text)
     else:
         return texts.UNKNOWN, keyboards.main_menu()
 
+
 def handle_update(client, update):
     kind = update.get("update_type")
 
-    if kind == "bot_started":            # пользователь впервые открыл бота
-        user_id = update["user"]["user_id"]
+    if kind == "bot_started":
+        person = update["user"]
         text = "/start"
-    elif kind == "message_created":      # обычное текстовое сообщение
+    elif kind == "message_created":
         message = update["message"]
-        user_id = message["sender"]["user_id"]
+        person = message["sender"]
         text = (message.get("body") or {}).get("text") or ""
-    elif kind == "message_callback":     # нажатие inline-кнопки
+    elif kind == "message_callback":
         callback = update["callback"]
-        user_id = callback["user"]["user_id"]
+        person = callback["user"]
         text = callback.get("payload") or ""
         try:
             client.answer_callback(callback["callback_id"])
@@ -43,8 +52,16 @@ def handle_update(client, update):
     else:
         return
 
-    reply_text, reply_keyboard = route(user_id, text)
+    user_id = person["user_id"]
+    profiles.remember(user_id, person.get("name"), person.get("username"))
+
+    try:
+        reply_text, reply_keyboard = route(user_id, text)
+    except Exception as error:   # API недоступен и т.п. — жилец получает понятный ответ
+        print("route error:", error, flush=True)
+        reply_text, reply_keyboard = texts.ERROR, keyboards.main_menu()
     client.send_message(user_id, reply_text, reply_keyboard)
+
 
 def run():
     client = MaxClient()
@@ -61,7 +78,6 @@ def run():
 
         marker = data.get("marker", marker)
         for update in data.get("updates", []):
-            print("UPDATE:", update, flush=True)   # временно, для отладки
             try:
                 handle_update(client, update)
             except Exception as error:
