@@ -75,3 +75,25 @@ ADDRESS_EXISTS = "Этот адрес уже добавлен."
 
 def normalize_input(text: str) -> str:
     return text.strip().lower()
+BTN_MY_APPEALS = "Мои обращения"
+MY_APPEALS = "Ваши обращения:\n{appeals}"
+NO_APPEALS = "У вас пока нет обращений."
+APPEAL_STATUS_CHANGED = "Статус обращения №{number} изменился: {status}."
+
+BTN_SETTINGS = "Настройки"
+SETTINGS_STATUS = (
+    "{title}\n\n"
+    "Вода: {water}\n"
+    "Электричество: {electricity}\n"
+    "Предупреждать за: {hours} ч.\n\n"
+    "Нажмите, чтобы изменить."
+)
+BTN_TOGGLE_WATER = "Вкл/выкл воду"
+BTN_TOGGLE_ELECTRICITY = "Вкл/выкл свет"
+BTN_SET_HOURS = "Изменить часы"
+BTN_UNSUBSCRIBE_ALL = "Отписаться от всех"
+ASK_HOURS = "За сколько часов до отключения предупреждать? Введите число от 0 до 72."
+HOURS_SAVED = "Готово, буду предупреждать за {hours} ч."
+UNSUBSCRIBED = "Уведомления отключены полностью. Включить можно в «Настройки»."
+ON = "включены"
+OFF = "выключены"

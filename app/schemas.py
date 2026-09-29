@@ -67,6 +67,7 @@ class UserUpdate(BaseModel):
     notify_outages: bool | None = None
     notify_water: bool | None = None
     notify_electricity: bool | None = None
+    notify_hours_before: int | None = Field(default=None, ge=0, le=72)
 
 
 class UserOut(ORMModel):
@@ -77,6 +78,7 @@ class UserOut(ORMModel):
     notify_outages: bool
     notify_water: bool
     notify_electricity: bool
+    notify_hours_before: int
     created_at: datetime
     addresses: list["AddressOut"] = Field(default_factory=list)
 
@@ -170,6 +172,12 @@ class AppealCreate(BaseModel):
         if not self.address_id and not self.address_text:
             raise ValueError("укажите address_id или address_text")
         return self
+
+
+class AppealStatusUpdate(BaseModel):
+    """Смена статуса обращения: ставит УК (или бот — после отправки письма)."""
+
+    status: AppealStatus
 
 
 class AppealOut(ORMModel):

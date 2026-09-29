@@ -77,3 +77,19 @@ def get_company(company_id):
         if error.status == 404:
             return None
         raise
+
+
+def list_appeals(max_user_id):
+    return _request("GET", "/appeals", params={"user_id": get_user_id(max_user_id)})
+
+
+def update_appeal_status(number, new_status):
+    return _request("PATCH", f"/appeals/{number}", json={"status": new_status})
+
+
+def get_settings(max_user_id):
+    return _request("GET", f"/users/{get_user_id(max_user_id)}")
+
+
+def update_settings(max_user_id, **fields):
+    return _request("PATCH", f"/users/{get_user_id(max_user_id)}", json=fields)
