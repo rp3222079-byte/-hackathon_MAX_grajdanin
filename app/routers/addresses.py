@@ -83,6 +83,17 @@ def delete_address(address_id: int, db: Session = Depends(get_db)) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.patch("/addresses/{address_id}/primary", response_model=AddressOut, summary="Сделать адрес основным")
+def set_primary_address(address_id: int, db: Session = Depends(get_db)) -> Address:
+    """Делает адрес основным: по нему бот будет искать отключения и подставлять его в обращения."""
+    address = require_address(db, address_id)
+    _drop_other_primary(db, address.user_id, address.id)
+    address.is_primary = True
+    db.commit()
+    db.refresh(address)
+    return address
+
+
 def _drop_other_primary(db: Session, user_id: int, keep_address_id: int | None) -> None:
     """Снимает отметку основного с остальных адресов жильца."""
     query = select(Address).where(Address.user_id == user_id, Address.is_primary.is_(True))

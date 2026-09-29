@@ -84,3 +84,4 @@ name,email,phone,website,city,street,houses
 "УК «Правобережная»",uk-pravoberezhnaya@example.ru,+7 383 300-00-06,https://example.ru/pravoberezhnaya,Новосибирск,"улица Серебренникова","1-29"
 "УК «Правобережная»",uk-pravoberezhnaya@example.ru,+7 383 300-00-06,https://example.ru/pravoberezhnaya,Новосибирск,"улица Кропоткина","1-15"
 "УК «Правобережная»",uk-pravoberezhnaya@example.ru,+7 383 300-00-06,https://example.ru/pravoberezhnaya,Новосибирск,"улица Пушкина","1-17"
+"УК «Тестовая»",uk-test@example.ru,+7 383 300-00-99,https://example.ru/test,Новосибирск,"улица Тестовая","1-17"

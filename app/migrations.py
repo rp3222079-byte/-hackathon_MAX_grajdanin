@@ -37,6 +37,7 @@ from sqlalchemy import (
     Table,
     func,
     select,
+    text,
 )
 
 from app.models import Base
@@ -67,6 +68,13 @@ SCHEMA_MIGRATIONS = Table(
 def initial_schema(conn: Connection) -> None:
     """Создаёт таблицы, описанные в app/models.py."""
     Base.metadata.create_all(conn)
+
+
+@migration(2, "add_notify_hours_before")
+def add_notify_hours_before(conn: Connection) -> None:
+    """Добавляет колонку users.notify_hours_before для новых баз без create_all."""
+    conn.execute(text("ALTER TABLE users ADD COLUMN notify_hours_before INTEGER DEFAULT 2"))
+
 
 
 def applied_versions(conn: Connection) -> set[int]:

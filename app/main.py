@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.db import init_db
 from app.errors import ConflictError, DomovoyError, NotFoundError
-from app.routers import addresses, appeals, outages, users
+from app.routers import addresses, appeals, outages, users, companies
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
@@ -53,7 +53,7 @@ app.include_router(users.router)
 app.include_router(addresses.router)
 app.include_router(outages.router)
 app.include_router(appeals.router)
-
+app.include_router(companies.router)
 
 @app.get("/health", tags="служебное", summary="Проверка, что API живой")
 def health() -> dict[str, str]:

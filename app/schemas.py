@@ -67,6 +67,7 @@ class UserUpdate(BaseModel):
     notify_outages: bool | None = None
     notify_water: bool | None = None
     notify_electricity: bool | None = None
+    notify_hours_before: int | None = Field(default=None, ge=0, le=72)
 
 
 class UserOut(ORMModel):
@@ -77,6 +78,7 @@ class UserOut(ORMModel):
     notify_outages: bool
     notify_water: bool
     notify_electricity: bool
+    notify_hours_before: int
     created_at: datetime
     addresses: list["AddressOut"] = Field(default_factory=list)
 
@@ -172,6 +174,12 @@ class AppealCreate(BaseModel):
         return self
 
 
+class AppealStatusUpdate(BaseModel):
+    """Смена статуса обращения: ставит УК (или бот — после отправки письма)."""
+
+    status: AppealStatus
+
+
 class AppealOut(ORMModel):
     """Обращение: номер для жильца, статус и адрес."""
 
@@ -191,3 +199,13 @@ class AppealOut(ORMModel):
 
 
 UserOut.model_rebuild()
+
+class CompanyOut(ORMModel):
+    """Управляющая компания в ответе API."""
+
+    id: int
+    name: str
+    email: str
+    phone: str | None
+    website: str | None
+    city: str

@@ -68,6 +68,7 @@ class User(Base):
     notify_water: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default=text("true")
     )
+    notify_hours_before: Mapped[int] = mapped_column(default=2)
     notify_electricity: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default=text("true")
     )
