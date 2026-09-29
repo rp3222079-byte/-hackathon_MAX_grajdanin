@@ -171,7 +171,7 @@ def read_providers(xlsx_path: Path, wanted: set[str] | None = None) -> Iterator[
         yield Provider(
             ogrn=ogrn,
             name=name,
-            email=_clean(row.get(COL_EMAIL)),
+            email=clean_email(row.get(COL_EMAIL)),
             phone=_clean(row.get(COL_PHONE)),
             website=_clean(row.get(COL_SITE)),
             function=_clean(row.get(COL_FUNCTION)),
@@ -224,6 +224,11 @@ def build_directory(
     Сначала читаются дома и собирается список нужных ОГРН, потом
     реестр поставщиков — так его приходится разбирать осмысленно
     только для нужных организаций.
+
+    Почта берётся настоящая, из графы «Адрес электронной почты». Если
+    у организации её нет, поле остаётся пустым: выдуманный адрес в
+    справочнике хуже, чем его отсутствие, потому что на него нельзя
+    отправить обращение. Сколько таких компаний, пишет вызывающий.
     """
     found: dict[str, list[House]] = {}
     for house in read_houses(houses_path, city):
@@ -237,7 +242,7 @@ def build_directory(
             continue
         company = CompanyDirectory(
             name=provider.name,
-            email=provider.email or f"ogrn{provider.ogrn}@gis.jkh",
+            email=provider.email,
             phone=provider.phone,
             website=provider.website,
             city=houses[0].city,
@@ -363,3 +368,21 @@ def _corpus_name(value: str) -> str | None:
 
 def _clean(value: str | None) -> str:
     return (value or "").strip()
+
+
+def clean_email(value: str | None) -> str:
+    """Настоящий адрес почты из ячейки реестра.
+
+    В ячейке бывает несколько адресов, каждый со своим переносом строки,
+    а вместо адреса иногда стоит прочерк или «нет». Такой мусор в базу
+    не кладём: пустая строка честнее несуществующего адреса, на который
+    всё равно нельзя отправить обращение.
+    """
+    for line in (value or "").replace("\xa0", " ").splitlines():
+        found = _EMAIL.search(line)
+        if found:
+            return found.group(0)
+    return ""
+
+
+_EMAIL = re.compile(r"[^@\s;,]+@[^@\s;,]*\.[A-Za-z]{2,}")

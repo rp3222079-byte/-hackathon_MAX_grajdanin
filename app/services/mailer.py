@@ -138,6 +138,12 @@ def send_email(msg, attempts=3, delay=2):
 
 def send_appeal(*, number, to_email, company, category, message, address,
                 contact=None, attachments=None):
+    if not (to_email or "").strip():
+        # У части организаций в реестре ГИС ЖКХ почты нет, и парсер
+        # оставляет поле пустым, а не выдумывает адрес. Отправлять
+        # письмо некуда, поэтому говорим об этом прямо, а не роняем
+        # SMTP на пустом адресе.
+        raise MailError(f"у компании «{company}» нет адреса почты в реестре ГИС ЖКХ")
     cfg = _settings()
     sender = cfg["sender"] or "no-reply@domovoy.local"
     msg = build_appeal_email(

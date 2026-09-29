@@ -36,6 +36,7 @@ from sqlalchemy import (
     String,
     Table,
     func,
+    inspect,
     select,
     text,
 )
@@ -72,9 +73,32 @@ def initial_schema(conn: Connection) -> None:
 
 @migration(2, "add_notify_hours_before")
 def add_notify_hours_before(conn: Connection) -> None:
-    """Добавляет колонку users.notify_hours_before для новых баз без create_all."""
+    """Добавляет колонку users.notify_hours_before для новых баз без create_all.
+
+    Миграция 1 создаёт таблицы по app/models.py, поэтому на новой базе
+    колонка уже есть — тогда ничего не делаем. Иначе падало бы на
+    «duplicate column name», то есть на любой базе с нуля.
+    """
+    if "notify_hours_before" in {column["name"] for column in inspect(conn).get_columns("users")}:
+        return
     conn.execute(text("ALTER TABLE users ADD COLUMN notify_hours_before INTEGER DEFAULT 2"))
 
+
+
+@migration(3, "clear_fake_uk_emails")
+def clear_fake_uk_emails(conn: Connection) -> None:
+    """Убирает выдуманные почты из справочника УК.
+
+    Парсер раньше подставлял адрес-заглушку на @gis.jkh, когда у
+    организации не было почты. Такой адрес несуществующий: на него
+    нельзя отправить обращение, но в базе он выглядит как настоящий.
+    Обнуляем, чтобы следующая загрузка внесла настоящий адрес из
+    реестра поставщиков, а CompaniesWithoutEmail показывал, кому
+    почты так и нет.
+    """
+    conn.execute(
+        text("UPDATE management_companies SET email = '' WHERE email LIKE '%@gis.jkh'")
+    )
 
 
 def applied_versions(conn: Connection) -> set[int]:
