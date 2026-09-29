@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Домовой — презентация</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+@page { size: 1280px 720px; margin: 0; }
+:root{
+  --ink:#122033; --ink-2:#2B3A4F; --muted:#66748A; --line:#DDE3EC; --bg:#F6F8FB; --card:#FFFFFF;
+  --acc:#1A7F8E; --acc-soft:#E3F3F5; --warm:#E5892F; --warm-soft:#FCEEDF; --bad:#C2413A; --bad-soft:#FBE7E5;
+  --good:#2E8B57; --good-soft:#E3F4EA; --ph:#FFF1A8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#fff}
+body{font-family:"Manrope","Segoe UI",Arial,sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;background:var(--bg);padding:56px 72px 48px;page-break-after:always;break-after:page;display:flex;flex-direction:column}
+.slide:last-child{page-break-after:auto;break-after:auto}
+.kicker{font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin:0 0 10px}
+h1{font-size:60px;line-height:1.05;margin:0;font-weight:800;letter-spacing:-.02em}
+h2{font-size:38px;line-height:1.15;margin:0 0 26px;font-weight:800;letter-spacing:-.01em;max-width:1050px}
+h3{font-size:20px;margin:0 0 8px;font-weight:700}
+p{margin:0}
+.lead{font-size:22px;line-height:1.45;color:var(--ink-2)}
+.small{font-size:15px;line-height:1.45;color:var(--muted)}
+.foot{position:absolute;left:72px;right:72px;bottom:22px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.card p,.card li{font-size:16px;line-height:1.45;color:var(--ink-2)}
+.card ul{margin:0;padding-left:18px}.card li{margin:3px 0}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.03em}
+.t-real{background:var(--good-soft);color:var(--good)}.t-test{background:var(--warm-soft);color:#A65B12}.t-model{background:var(--bad-soft);color:var(--bad)}.t-plan{background:#ECEFF5;color:var(--ink-2)}
+.ph{background:var(--ph);padding:0 6px;border-radius:4px;font-weight:700}
+.mono{font-family:"JetBrains Mono",Consolas,monospace;font-size:14px}
+table{border-collapse:collapse;width:100%;font-size:16px}
+th{text-align:left;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;padding:8px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;color:var(--ink-2)}
+td b{color:var(--ink)}
+.big{font-size:44px;font-weight:800;color:var(--acc);line-height:1}
+.num{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.row{display:flex;gap:12px;align-items:flex-start}
+/* chat mock */
+.phone{background:#fff;border:1px solid var(--line);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.phone .hdr{font-size:13px;font-weight:700;color:var(--muted);text-align:center;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.b{max-width:88%;padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.4;white-space:pre-line}
+.bot{background:#EEF1F6;align-self:flex-start;border-bottom-left-radius:4px}
+.me{background:var(--acc);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.kb{display:flex;flex-direction:column;gap:4px;align-self:flex-start;width:88%}
+.kb span{border:1px solid var(--acc);color:var(--acc);border-radius:9px;font-size:12.5px;font-weight:700;text-align:center;padding:5px}
+/* flow */
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .st{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:15px;line-height:1.4}
+.flow .ar{width:30px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px}
+.cover{background:linear-gradient(135deg,#0F2A3A 0%,#15505B 60%,#1A7F8E 100%);color:#fff}
+.cover .kicker{color:#9FE3EA}
+.cover .lead{color:#D8EEF1}
+.tech{background:#fff}
+.tech td{font-size:15px;padding:8px 12px}
+.note{border-left:4px solid var(--warm);background:var(--warm-soft);padding:12px 16px;border-radius:0 10px 10px 0;font-size:15px;line-height:1.45;color:#5B3A12}
+</style>
+</head>
+<body>
+
+<!-- 1. Техническая информация -->
+<section class="slide tech">
+  <p class="kicker">Служебный слайд · для технической проверки</p>
+  <h2 style="margin-bottom:18px">Домовой: данные для проверки</h2>
+  <table>
+    <tr><td style="width:300px"><b>Бот в MAX</b></td><td><span class="ph">https://max.ru/&lt;ник_бота&gt;</span></td></tr>
+    <tr><td><b>Репозиторий</b></td><td class="mono">https://github.com/rp3222079-byte/-hackathon_MAX_grajdanin</td></tr>
+    <tr><td><b>Commit hash</b></td><td><span class="ph mono">&lt;hash финального коммита&gt;</span></td></tr>
+    <tr><td><b>Собственный API</b></td><td>Внутренний, для бота (ключ <span class="mono">X-API-Key</span>), наружу не публикуется. После запуска: <span class="mono">http://localhost:8000/docs</span></td></tr>
+    <tr><td><b>Тестовые логины и пароли</b></td><td>Не нужны: жилец входит через свой аккаунт MAX, регистрация по <span class="mono">user_id</span></td></tr>
+    <tr><td><b>Переменные окружения</b></td><td><span class="mono">MAX_BOT_TOKEN=</span><span class="ph mono">&lt;токен&gt;</span>; остальные значения по умолчанию из <span class="mono">.env.example</span> (<span class="mono">SMTP_DRY_RUN=true</span> — письма в том <span class="mono">outbox</span>)</td></tr>
+    <tr><td><b>Локальный запуск</b></td><td class="mono">cp .env.example .env &amp;&amp; docker compose up --build</td></tr>
+    <tr><td><b>Основной сценарий</b></td><td>«Начать» → <b>Новосибирск</b> → <b>Ленина</b> → <b>11</b> → <b>5</b> (через минуту придёт уведомление об отключении) → «Написать обращение» → «Лифт» → текст → «Без фото» → «Только имя в MAX» → «Отправить» → ссылка для УК из <span class="mono">docker compose logs bot</span> → «В работе» + комментарий → ответ приходит в MAX</td></tr>
+    <tr><td><b>Тестовые данные</b></td><td>Справочник УК Новосибирска (тестовый, почты на @example.ru), демо-отключения на каждую улицу справочника: <b>смоделированы</b></td></tr>
+  </table>
+</section>
+
+<!-- 2. Обложка -->
+<section class="slide cover">
+  <div style="margin-top:auto;margin-bottom:auto">
+    <p class="kicker">Хакатон MAX · трек «Умный город»</p>
+    <h1 style="font-size:84px">Домовой</h1>
+    <p class="lead" style="font-size:28px;margin-top:18px;max-width:900px">Бот в MAX, который за пару минут отправляет обращение жильца в&nbsp;<i>его</i> управляющую компанию и показывает отключения по дому</p>
+  </div>
+  <div style="display:flex;gap:40px;font-size:16px;color:#D8EEF1">
+    <div><b style="color:#fff">Команда</b><br><span class="ph" style="color:var(--ink)">&lt;ФИО — роль&gt;</span> × 4</div>
+    <div><b style="color:#fff">GitHub</b><br>rp3222079-byte · Kuso0taku · Loirew122 · Stepan</div>
+  </div>
+</section>
+
+<!-- 3. Резюме -->
+<section class="slide">
+  <p class="kicker">Резюме проекта</p>
+  <h2>Жилец не должен выяснять, кто обслуживает его дом и куда писать</h2>
+  <div class="grid g3" style="margin-bottom:22px">
+    <div class="card"><h3>Проблема</h3><p>Чтобы сообщить о поломке в доме, жилец ищет свою УК, её почту или телефон и пишет в свободной форме. Потом не знает, дошло ли обращение и в каком оно статусе.</p></div>
+    <div class="card"><h3>Решение</h3><p>Бот в MAX: адрес указывается один раз (или геолокацией), УК определяется по справочнику ГИС ЖКХ, обращение с фото уходит на официальную почту УК. УК отвечает по ссылке из письма, без регистрации.</p></div>
+    <div class="card"><h3>Результат для жильца</h3><p>Обращение с номером за 2–3 минуты, ответ УК прямо в MAX, история «Мои обращения», предупреждения об отключениях воды и света по своему дому.</p></div>
+  </div>
+  <div class="note"><b>Почему сейчас.</b> С 1 сентября 2026 года правила управления МКД предусматривают взаимодействие УК с собственниками через MAX (ПП РФ от 26.01.2026 № 40). Домовой работает уже сегодня, даже если УК ещё не подключилась к MAX: мост идёт через её официальную почту.</div>
+</section>
+
+<!-- 4. ЦА и проблема -->
+<section class="slide">
+  <p class="kicker">Целевая аудитория и проблема</p>
+  <h2>Приоритетный сегмент: жилец МКД под управлением УК, у которого что-то сломалось в доме</h2>
+  <div class="grid g2" style="grid-template-columns:1.25fr 1fr">
+    <div class="card" style="background:var(--acc-soft);border-color:#BFE3E8">
+      <h3>Формулировка проблемы</h3>
+      <p style="font-size:19px;line-height:1.5;color:var(--ink)"><b>Жилец многоквартирного дома</b> в ситуации <b>поломки в общем имуществе</b> (лифт, протечка, свет в подъезде) хочет, <b>чтобы УК узнала и начала работу</b>, но <b>не знает, какая УК обслуживает дом и как ей написать</b>. В итоге он пишет в домовой чат или не пишет вовсе, а проблема не фиксируется официально.</p>
+    </div>
+    <div class="grid" style="gap:12px">
+      <div class="card"><span class="tag t-real">факт</span><p style="margin-top:6px">Жилищный фонд РФ — около <b>4,2 млрд м²</b> (Росстат, 2024). Данные о доме и УК разбросаны по ГИС ЖКХ, региональным системам и сайтам УК.</p></div>
+      <div class="card"><span class="tag t-real">факт</span><p style="margin-top:6px">В реестре ГИС ЖКХ по Новосибирску — <b>1286</b> управляющих организаций, почта указана у <b>1282</b> (наш парсер). Официальный канал есть почти у всех, но жилец о нём не знает.</p></div>
+      <div class="card"><span class="tag t-plan">гипотеза</span><p style="margin-top:6px">Главный барьер — не нежелание писать, а поиск адресата и формы обращения. Проверим на пилоте.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. As Is / To Be -->
+<section class="slide">
+  <p class="kicker">Как сейчас и как станет</p>
+  <h2>Убираем поиск УК и ручное составление письма</h2>
+  <div class="grid g2">
+    <div class="card" style="border-color:#F2C9C5">
+      <h3 style="color:var(--bad)">Как сейчас</h3>
+      <ul>
+        <li>Найти, какая УК обслуживает дом: квитанция, сайт ГИС ЖКХ, соседи</li>
+        <li>Найти почту или телефон УК</li>
+        <li>Составить письмо: адрес, суть, контакты</li>
+        <li>Не знать, дошло ли письмо, и не иметь номера обращения</li>
+        <li>Через неделю вспоминать, когда и кому писал</li>
+      </ul>
+      <p class="small" style="margin-top:10px">5+ ручных шагов, 3 источника, результат не фиксируется</p>
+    </div>
+    <div class="card" style="border-color:#BFE3E8">
+      <h3 style="color:var(--acc)">С Домовым</h3>
+      <ul>
+        <li>Адрес вводится <b>один раз</b></li>
+        <li>УК определяется <b>автоматически</b> по справочнику ГИС ЖКХ</li>
+        <li>Обращение собирается <b>кнопками</b>: тема, текст, фото, контакт</li>
+        <li>Жилец сразу получает <b>номер DM-00001</b> и видит, кому ушло письмо</li>
+        <li>УК отмечает «В работе» / «Решено» <b>по ссылке из письма</b>, жилец получает ответ в MAX</li>
+      </ul>
+      <p class="small" style="margin-top:10px">Один диалог в MAX, ни одного внешнего источника для жильца</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Сценарий -->
+<section class="slide">
+  <p class="kicker">Решение и основной сценарий</p>
+  <h2>От «Начать» до отправленного обращения за один диалог</h2>
+  <div class="flow" style="margin-bottom:22px">
+    <div class="st"><span class="num">1</span><h3 style="margin-top:8px">Адрес</h3>кнопками, с подсказкой улиц или геолокацией. Один раз</div><div class="ar">→</div>
+    <div class="st"><span class="num">2</span><h3 style="margin-top:8px">Тема</h3>Протечка, Отопление, Лифт, Мусор, Подъезд и двор, Другое</div><div class="ar">→</div>
+    <div class="st"><span class="num">3</span><h3 style="margin-top:8px">Детали</h3>текст, фото, телефон кнопкой MAX — по желанию</div><div class="ar">→</div>
+    <div class="st"><span class="num">4</span><h3 style="margin-top:8px">Проверка</h3>сводка: адрес, тема, контакт, текст. «Отправить»</div><div class="ar">→</div>
+    <div class="st" style="background:var(--acc-soft);border-color:#BFE3E8"><span class="num">5</span><h3 style="margin-top:8px">Результат</h3>номер, письмо в УК, ответ УК приходит в MAX</div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>Ответ УК</h3><p>Сотрудник УК открывает ссылку из письма, ставит «В работе» или «Решено» с комментарием — жилец получает сообщение в MAX.</p></div>
+    <div class="card"><h3>Отключения</h3><p>Бот сам предупреждает за N часов до отключения воды или света по адресу жильца; список — по кнопке «Отключения».</p></div>
+    <div class="card"><h3>Без тупиков</h3><p>«Отмена» и кнопки меню работают на любом шаге, опечатка в улице — подсказка, дома нет в справочнике — сразу понятно.</p></div>
+  </div>
+</section>
+
+<!-- 7. Демо -->
+<section class="slide">
+  <p class="kicker">Как это выглядит в MAX</p>
+  <h2 style="margin-bottom:18px">Ответы бота из сквозного прогона</h2>
+  <div class="grid g3" style="gap:22px">
+    <div class="phone"><div class="hdr">Домовой · адрес</div>
+      <div class="b bot">В каком городе ваш дом? Выберите город или отправьте геолокацию.</div>
+      <div class="kb"><span>Отправить геолокацию</span><span>Новосибирск</span></div>
+      <div class="b me">Ленена</div>
+      <div class="b bot">Не нашёл точно «Ленена». Возможно, вы имели в виду?</div>
+      <div class="kb"><span>улица Ленина</span></div>
+      <div class="b bot">Адрес сохранён: Новосибирск, улица Ленина, 11, кв. 5
+Управляющая компания: УК «Сибирь», тел. +7 383 300-00-01</div>
+      <div class="b bot">Внимание: по адресу … отключат воду. 30.09 с 01:00 до 05:00</div>
+    </div>
+    <div class="phone"><div class="hdr">Домовой · обращение</div>
+      <div class="b bot">Обращение уйдёт в УК «Сибирь». О чём обращение?</div>
+      <div class="kb"><span>Лифт</span></div>
+      <div class="b me">Лифт не работает третий день</div>
+      <div class="b bot">Передать УК ваш контакт?</div>
+      <div class="kb"><span>Поделиться номером телефона</span><span>Только имя в MAX</span></div>
+      <div class="b bot">Получатель: УК «Сибирь»
+Тема: Лифт · Фото: нет</div>
+      <div class="kb"><span>Отправить</span></div>
+      <div class="b bot">Обращение №DM-00001 отправлено в УК «Сибирь».</div>
+    </div>
+    <div class="phone"><div class="hdr">Страница УК → жилец</div>
+      <div class="b bot" style="background:#FCEEDF">УК по ссылке из письма:
+◉ В работе
+«Лифтёр приедет сегодня до 18:00»
+[Сохранить и уведомить жильца]</div>
+      <div class="b bot">Обращение №DM-00001 «Лифт»: в работе.
+Ответ УК: Лифтёр приедет сегодня до 18:00</div>
+      <div class="b me">Мои обращения</div>
+      <div class="b bot">№DM-00001 · Лифт
+30.09.2026 · УК «Сибирь»
+Статус: в работе</div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px">Отключения и справочник УК в демонстрации — тестовые данные. <span class="ph">Замените макеты скриншотами из MAX.</span></p>
+</section>
+
+<!-- 8. Эффект -->
+<section class="slide">
+  <p class="kicker">Ожидаемый эффект</p>
+  <h2>Что должно измениться и как это проверить</h2>
+  <p class="lead" style="margin:-8px 0 20px;font-size:18px">Если мы поможем <b>жильцу МКД</b> отправить обращение с помощью <b>бота, который сам находит УК и собирает письмо</b>, то обращений, дошедших до правильного адресата, станет больше, потому что исчезают поиск УК и составление письма.</p>
+  <table>
+    <tr><th>Метрика</th><th>Как сейчас (оценка)</th><th>Цель пилота</th><th>Как измеряем</th></tr>
+    <tr><td><b>Время подачи обращения</b></td><td>15–30 мин на поиск УК и письмо <span class="tag t-plan">допущение</span></td><td>≤ 3 мин</td><td>от «Написать обращение» до «Отправить», по логам</td></tr>
+    <tr><td><b>Ручных шагов и внешних источников</b></td><td>5+ шагов, 3 источника</td><td>1 диалог, 0 источников</td><td>карта процесса</td></tr>
+    <tr><td><b>Доля завершивших сценарий</b></td><td>—</td><td>≥ 70%</td><td>начали обращение → статус sent</td></tr>
+    <tr><td><b>Обращения, ушедшие в правильную УК</b></td><td>—</td><td>≥ 95% адресов с найденной УК</td><td>доля appeals с company_id</td></tr>
+    <tr><td><b>Повторные обращения по той же проблеме</b></td><td>—</td><td>снижение</td><td>совпадение адреса и темы за 14 дней</td></tr>
+  </table>
+  <p class="small" style="margin-top:12px">Базовые значения «как сейчас» — наши допущения, их нужно подтвердить интервью с жильцами до пилота.</p>
+</section>
+
+<!-- 9. Архитектура -->
+<section class="slide">
+  <p class="kicker">Архитектура решения</p>
+  <h2>Тонкий бот, одна точка правды в API</h2>
+  <svg viewBox="0 0 1136 330" width="1136" height="330" style="font-family:Manrope,Segoe UI,sans-serif">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#66748A"/></marker></defs>
+    <g font-size="15">
+      <rect x="0" y="120" width="150" height="70" rx="14" fill="#fff" stroke="#DDE3EC"/><text x="75" y="152" text-anchor="middle" font-weight="700">Жилец</text><text x="75" y="172" text-anchor="middle" fill="#66748A" font-size="13">MAX: моб. / web</text>
+      <rect x="210" y="120" width="170" height="70" rx="14" fill="#fff" stroke="#DDE3EC"/><text x="295" y="152" text-anchor="middle" font-weight="700">MAX Bot API</text><text x="295" y="172" text-anchor="middle" fill="#66748A" font-size="13">platform-api2.max.ru</text>
+      <rect x="440" y="110" width="200" height="90" rx="14" fill="#E3F3F5" stroke="#1A7F8E"/><text x="540" y="145" text-anchor="middle" font-weight="800">bot</text><text x="540" y="166" text-anchor="middle" fill="#2B3A4F" font-size="13">long polling, диалоги,</text><text x="540" y="183" text-anchor="middle" fill="#2B3A4F" font-size="13">статусы, письмо в УК</text>
+      <rect x="700" y="110" width="190" height="90" rx="14" fill="#E3F3F5" stroke="#1A7F8E"/><text x="795" y="145" text-anchor="middle" font-weight="800">api · FastAPI</text><text x="795" y="166" text-anchor="middle" fill="#2B3A4F" font-size="13">жильцы, адреса, УК,</text><text x="795" y="183" text-anchor="middle" fill="#2B3A4F" font-size="13">отключения, обращения</text>
+      <rect x="950" y="120" width="180" height="70" rx="14" fill="#fff" stroke="#DDE3EC"/><text x="1040" y="152" text-anchor="middle" font-weight="700">PostgreSQL</text><text x="1040" y="172" text-anchor="middle" fill="#66748A" font-size="13">SQLite локально</text>
+      <rect x="440" y="260" width="200" height="64" rx="14" fill="#FCEEDF" stroke="#E5892F"/><text x="540" y="288" text-anchor="middle" font-weight="700">Почта УК</text><text x="540" y="307" text-anchor="middle" fill="#66748A" font-size="13">письмо + фото + ссылка</text>
+      <rect x="700" y="260" width="190" height="64" rx="14" fill="#FCEEDF" stroke="#E5892F"/><text x="795" y="288" text-anchor="middle" font-weight="700">Страница УК</text><text x="795" y="307" text-anchor="middle" fill="#66748A" font-size="13">/uk/appeals, подпись HMAC</text>
+      <rect x="210" y="260" width="170" height="64" rx="14" fill="#fff" stroke="#DDE3EC"/><text x="295" y="288" text-anchor="middle" font-weight="700">Nominatim OSM</text><text x="295" y="307" text-anchor="middle" fill="#66748A" font-size="13">адрес по геолокации</text>
+      <rect x="700" y="0" width="190" height="64" rx="14" fill="#fff" stroke="#DDE3EC"/><text x="795" y="28" text-anchor="middle" font-weight="700">parser ГИС ЖКХ</text><text x="795" y="47" text-anchor="middle" fill="#66748A" font-size="13">УК и дома по ОГРН</text>
+      <rect x="950" y="0" width="180" height="64" rx="14" fill="#fff" stroke="#DDE3EC"/><text x="1040" y="28" text-anchor="middle" font-weight="700">dom.gosuslugi.ru</text><text x="1040" y="47" text-anchor="middle" fill="#66748A" font-size="13">открытые выгрузки</text>
+    </g>
+    <g stroke="#66748A" stroke-width="2" fill="none">
+      <path d="M150 155 H206" marker-end="url(#a)"/><path d="M380 155 H436" marker-end="url(#a)"/>
+      <path d="M640 155 H696" marker-end="url(#a)"/><path d="M890 155 H946" marker-end="url(#a)"/>
+      <path d="M540 200 V256" marker-end="url(#a)"/><path d="M950 32 H894" marker-end="url(#a)"/>
+      <path d="M640 292 H696" marker-end="url(#a)"/><path d="M795 256 V204" marker-end="url(#a)"/>
+      <path d="M460 200 C 420 240, 390 270, 384 285" marker-end="url(#a)"/>
+      <path d="M890 50 C 960 60, 1040 80, 1040 116" marker-end="url(#a)"/>
+    </g>
+  </svg>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><p><b>Бот не ходит в базу напрямую</b>, только через API: логика данных живёт в одном месте, бот остаётся слоем диалогов.</p></div>
+    <div class="card"><p><b>Надёжность:</b> письмо уходит в фоне, отметки об уведомлениях и диалоги переживают перезапуск, при сбое почты — повтор одной кнопкой.</p></div>
+    <div class="card"><p><b>Запуск и качество:</b> <span class="mono">docker compose up --build</span>; 173 автотеста и CI со сборкой Docker.</p></div>
+  </div>
+</section>
+
+<!-- 10. Данные -->
+<section class="slide">
+  <p class="kicker">Данные и интеграции</p>
+  <h2>Отделяем реальные интеграции от тестовых данных</h2>
+  <table>
+    <tr><th>Что</th><th>Источник</th><th>В MVP</th><th>Что нужно для продакшена</th></tr>
+    <tr><td><b>Сообщения жильца</b></td><td>MAX Bot API</td><td><span class="tag t-real">реально</span></td><td>—</td></tr>
+    <tr><td><b>Справочник УК и домов</b></td><td>Открытые выгрузки ГИС ЖКХ: реестр поставщиков информации + объекты жилищного фонда, склейка по ОГРН</td><td><span class="tag t-real">парсер реальный</span> <span class="tag t-test">в демо тестовый csv</span></td><td>регулярное обновление выгрузок, сверка с ФИАС</td></tr>
+    <tr><td><b>Отправка обращения</b></td><td>SMTP на официальную почту УК из реестра</td><td><span class="tag t-real">реально</span>, в проверке outbox</td><td>ящик сервиса, SPF/DKIM, согласование с УК</td></tr>
+    <tr><td><b>Отключения</b></td><td>Сайты ресурсоснабжающих организаций, otklyuchenia.ru</td><td><span class="tag t-model">смоделированы</span></td><td>парсер или договор с РСО / диспетчерской</td></tr>
+    <tr><td><b>Статус «в работе / решено»</b></td><td>Страница обращения по подписанной ссылке из письма</td><td><span class="tag t-real">реально</span></td><td>кабинет УК с учётными записями, сроки ответа</td></tr>
+    <tr><td><b>Адрес по геолокации</b></td><td>Геолокация MAX + OpenStreetMap Nominatim</td><td><span class="tag t-real">реально</span></td><td>ФИАС для точной привязки к дому</td></tr>
+  </table>
+  <p class="small" style="margin-top:14px">Персональные данные: user_id MAX, адрес, текст обращения. Имя и ник попадают в письмо только с согласия жильца (кнопка «Указать контакт»).</p>
+</section>
+
+<!-- 11. MoSCoW -->
+<section class="slide">
+  <p class="kicker">Границы MVP</p>
+  <h2>Сделали путь жильца и ответ УК до конца, остальное сознательно отложили</h2>
+  <div class="grid g4">
+    <div class="card" style="border-top:4px solid var(--good)"><h3>Must · сделано</h3><ul><li>Адрес с проверкой по справочнику</li><li>Автопоиск УК по дому</li><li>Обращение: тема, текст, контакт, подтверждение</li><li>Письмо УК с номером</li><li>Ответ УК → жилец в MAX</li></ul></div>
+    <div class="card" style="border-top:4px solid var(--acc)"><h3>Should · сделано</h3><ul><li>Уведомления об отключениях</li><li>Фото во вложении письма</li><li>Телефон УК для аварийных тем</li><li>Несколько адресов, основной</li><li>Подсказка улиц, геолокация</li></ul></div>
+    <div class="card" style="border-top:4px solid var(--warm)"><h3>Could · следующий шаг</h3><ul><li>Реальный источник отключений</li><li>Кабинет УК в мини-приложении</li><li>Сроки ответа и напоминания УК</li><li>Приём через MAX-канал УК</li></ul></div>
+    <div class="card" style="border-top:4px solid var(--muted)"><h3>Won’t · не в этой версии</h3><ul><li>Собрания и голосования собственников</li><li>Оплата ЖКУ, показания счётчиков</li><li>LLM-классификация обращений</li></ul></div>
+  </div>
+</section>
+
+<!-- 11b. Возможности MAX -->
+<section class="slide">
+  <p class="kicker">Возможности платформы MAX</p>
+  <h2>Используем MAX шире текстового чата — там, где это экономит шаги жильцу</h2>
+  <table>
+    <tr><th>Возможность MAX</th><th>Где в сценарии</th><th>Что даёт жильцу и УК</th></tr>
+    <tr><td><b>Кнопка «Отправить геолокацию»</b> <span class="mono">request_geo_location</span></td><td>ввод адреса</td><td>адрес без набора текста, жилец только подтверждает</td></tr>
+    <tr><td><b>Кнопка «Поделиться номером»</b> <span class="mono">request_contact</span></td><td>контакт в обращении</td><td>УК получает настоящий телефон, а не ник; только по согласию</td></tr>
+    <tr><td><b>Фото во вложениях</b></td><td>описание проблемы</td><td>фото уходят в письмо УК — меньше уточняющих звонков</td></tr>
+    <tr><td><b>Правка сообщения при нажатии</b> <span class="mono">/answers</span></td><td>все кнопки</td><td>старые кнопки исчезают, в истории виден сделанный выбор</td></tr>
+    <tr><td><b>Проактивные сообщения</b></td><td>отключения, статусы</td><td>жилец узнаёт об отключении и ответе УК, ничего не спрашивая</td></tr>
+    <tr><td><b>Команды бота</b> <span class="mono">/me/commands</span></td><td>меню MAX</td><td>/start и /help всегда под рукой</td></tr>
+  </table>
+</section>
+
+<!-- 12. Масштабирование -->
+<section class="slide">
+  <p class="kicker">Потенциал масштабирования</p>
+  <h2>Новый город — это новая выгрузка ГИС ЖКХ, а не новый продукт</h2>
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card"><h3>Ядро (не меняется)</h3><ul><li>Сценарий: адрес → обращение → номер → статус</li><li>Архитектура bot + api + БД, модель данных</li><li>Нормализация адресов и поиск УК по дому</li><li>Интерфейс в MAX: кнопки, тексты, статусы</li></ul></div>
+    <div class="card"><h3>Переменная часть (адаптируется)</h3><ul><li>Справочник УК города: <span class="mono">python -m app.parser --city &lt;город&gt; --load</span></li><li>Источник отключений: свой у каждой РСО</li><li>Категории обращений и аварийные телефоны</li><li>Канал в УК: почта сейчас, MAX или ГИС ЖКХ дальше</li></ul></div>
+  </div>
+  <div class="flow">
+    <div class="st"><b>1. Новосибирск</b><br>пилот: 1 УК, 3–5 домов</div><div class="ar">→</div>
+    <div class="st"><b>2. Все УК Новосибирска</b><br>1286 организаций из реестра</div><div class="ar">→</div>
+    <div class="st"><b>3. Города-миллионники</b><br>Казань, Екатеринбург, Красноярск: парсер + местные РСО</div><div class="ar">→</div>
+    <div class="st"><b>4. Подключение УК к MAX</b><br>статусы от УК напрямую, без почты</div>
+  </div>
+</section>
+
+<!-- 13. Пилот -->
+<section class="slide">
+  <p class="kicker">Сценарий пилотного запуска</p>
+  <h2>Один партнёр-УК, несколько домов, четыре недели</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Где и для кого</h3><p>Одна управляющая компания в Новосибирске, 3–5 домов (≈ 500–1000 квартир). Партнёр УК назначает ответственного за обращения.</p></div>
+    <div class="card"><h3>Как встраивается</h3><p>Обращения приходят на ту же официальную почту, что и сейчас. Диспетчеру ничего не нужно устанавливать: статус и комментарий ставятся по ссылке из письма в два клика.</p></div>
+    <div class="card"><h3>Как узнают жильцы</h3><p>QR-код на доске объявлений и в лифте, пост в домовом чате, строка в квитанции УК.</p></div>
+    <div class="card"><h3>Что нужно</h3><p>Справочник домов партнёра, ящик сервиса с SPF/DKIM, хостинг бота и API, согласие на обработку ПДн.</p></div>
+    <div class="card"><h3>Метрики пилота</h3><p>Активированные квартиры, доля завершивших сценарий, время подачи, доля обращений со статусом «решено», NPS жильцов.</p></div>
+    <div class="card" style="background:var(--acc-soft);border-color:#BFE3E8"><h3>Следующий шаг</h3><p>При доле завершивших ≥ 70% и положительном отзыве УК: все дома партнёра, кабинет УК в мини-приложении, выход на вторую УК.</p></div>
+  </div>
+</section>
+
+<!-- 14. Риски -->
+<section class="slide">
+  <p class="kicker">Ограничения, риски, допущения</p>
+  <h2>Что мы знаем, что предполагаем и чего пока нет</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Ограничения MVP</h3><ul><li>Отключения смоделированы</li><li>Тестовый справочник только по Новосибирску</li><li>Страница УК без учётных записей: доступ по ссылке из письма</li><li>Геолокация зависит от данных OpenStreetMap</li></ul></div>
+    <div class="card"><h3>Риски</h3><ul><li>УК не отвечает на почту → нужен партнёр и кабинет УК</li><li>Устаревшие данные ГИС ЖКХ → регулярное обновление, кнопка «Моя УК другая»</li><li>Письма в спам → SPF/DKIM, ящик сервиса</li><li>152-ФЗ → согласие на обработку, минимум данных</li></ul></div>
+    <div class="card"><h3>Допущения</h3><ul><li>Жилец готов указать адрес ради автоматического поиска УК</li><li>Официальная почта из реестра читается УК</li><li>Время подачи сейчас 15–30 мин</li></ul><p class="small" style="margin-top:8px">Проверяются интервью и пилотом.</p></div>
+  </div>
+</section>
+
+<!-- 15. Источники -->
+<section class="slide">
+  <p class="kicker">Использованные источники</p>
+  <h2>Источники</h2>
+  <div class="card" style="font-size:17px;line-height:1.7">
+    <ol style="margin:0;padding-left:22px;color:var(--ink-2)">
+      <li>Кейс «Умный город», хакатон MAX, 2026.</li>
+      <li>Росстат. Жилищный фонд Российской Федерации, 2024.</li>
+      <li>Постановление Правительства РФ от 26.01.2026 № 40; материалы Минстроя России о взаимодействии организаций ЖКХ с жителями через MAX.</li>
+      <li>ГИС ЖКХ (dom.gosuslugi.ru): реестр поставщиков информации, сведения об объектах жилищного фонда. Открытые выгрузки.</li>
+      <li>Жилищный кодекс Российской Федерации.</li>
+      <li>Документация платформы MAX для разработчиков (dev.max.ru): Bot API.</li>
+      <li>otklyuchenia.ru: планируемый источник данных об отключениях.</li>
+    </ol>
+  </div>
+  <p class="small" style="margin-top:16px">Цифры «1286 УК / 1282 с почтой» получены парсером команды из открытых выгрузок ГИС ЖКХ по Новосибирску.</p>
+</section>
+
+</body>
+</html>
