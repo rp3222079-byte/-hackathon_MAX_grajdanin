@@ -69,12 +69,12 @@ td b{color:var(--ink)}
   <p class="kicker">Служебный слайд · для технической проверки</p>
   <h2 style="margin-bottom:18px">Домовой: данные для проверки</h2>
   <table>
-    <tr><td style="width:300px"><b>Бот в MAX</b></td><td><span class="ph">https://max.ru/&lt;ник_бота&gt;</span></td></tr>
+    <tr><td style="width:300px"><b>Бот в MAX</b></td><td class="mono">https://web.max.ru/387031056</td></tr>
     <tr><td><b>Репозиторий</b></td><td class="mono">https://github.com/rp3222079-byte/-hackathon_MAX_grajdanin</td></tr>
-    <tr><td><b>Commit hash</b></td><td><span class="ph mono">&lt;hash финального коммита&gt;</span></td></tr>
+    <tr><td><b>Commit hash</b></td><td class="mono">{{HASH}}</td></tr>
     <tr><td><b>Собственный API</b></td><td>Внутренний, для бота (ключ <span class="mono">X-API-Key</span>), наружу не публикуется. После запуска: <span class="mono">http://localhost:8000/docs</span></td></tr>
     <tr><td><b>Тестовые логины и пароли</b></td><td>Не нужны: жилец входит через свой аккаунт MAX, регистрация по <span class="mono">user_id</span></td></tr>
-    <tr><td><b>Переменные окружения</b></td><td><span class="mono">MAX_BOT_TOKEN=</span><span class="ph mono">&lt;токен&gt;</span>; остальные значения по умолчанию из <span class="mono">.env.example</span> (<span class="mono">SMTP_DRY_RUN=true</span> — письма в том <span class="mono">outbox</span>)</td></tr>
+    <tr><td><b>Переменные окружения</b></td><td><span class="mono">MAX_BOT_TOKEN</span> — токен, выданный организаторами команде «Гражданин»; остальные значения по умолчанию из <span class="mono">.env.example</span> (<span class="mono">SMTP_DRY_RUN=true</span> — письма в том <span class="mono">outbox</span>)</td></tr>
     <tr><td><b>Локальный запуск</b></td><td class="mono">cp .env.example .env &amp;&amp; docker compose up --build</td></tr>
     <tr><td><b>Основной сценарий</b></td><td>«Начать» → <b>Новосибирск</b> → <b>Ленина</b> → <b>11</b> → <b>5</b> (через минуту придёт уведомление об отключении) → «Написать обращение» → «Лифт» → текст → «Без фото» → «Только имя в MAX» → «Отправить» → ссылка для УК из <span class="mono">docker compose logs bot</span> → «В работе» + комментарий → ответ приходит в MAX</td></tr>
     <tr><td><b>Тестовые данные</b></td><td>Справочник УК Новосибирска (тестовый, почты на @example.ru), демо-отключения на каждую улицу справочника: <b>смоделированы</b></td></tr>
@@ -89,7 +89,7 @@ td b{color:var(--ink)}
     <p class="lead" style="font-size:28px;margin-top:18px;max-width:900px">Бот в MAX, который за пару минут отправляет обращение жильца в&nbsp;<i>его</i> управляющую компанию и показывает отключения по дому</p>
   </div>
   <div style="display:flex;gap:40px;font-size:16px;color:#D8EEF1">
-    <div><b style="color:#fff">Команда</b><br><span class="ph" style="color:var(--ink)">&lt;ФИО — роль&gt;</span> × 4</div>
+    <div><b style="color:#fff">Команда «Гражданин»</b><br>Попов Роман · Синьшинов Степан · Сенчурин Илья · Устюжанин Денис</div>
     <div><b style="color:#fff">GitHub</b><br>rp3222079-byte · Kuso0taku · Loirew122 · Stepan</div>
   </div>
 </section>
