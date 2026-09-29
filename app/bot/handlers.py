@@ -1,10 +1,11 @@
 from app.bot import texts, keyboards
 import itertools
 from app.bot import states
-
 from app.services.matching import find_affected_users
 from app.services.notifier import format_outage_message
-
+import os
+from app.services import mailer
+from app.bot import profiles
 def handle_start(message_text):
     reply_text = texts.WELCOME
     reply_keyboard = keyboards.main_menu()
@@ -31,7 +32,7 @@ def handle_appeal(user_id, message_text):
 
 # временные заглушки — компания и счётчик обращений,
 # пока не готовы реальные БД/API (issues #4, #5)
-FAKE_COMPANY = {"name": 'УК "Дом"', "email": "uk@example.com"}
+FAKE_COMPANY = {"name": 'УК "Дом"', "email": os.getenv("APPEAL_TEST_EMAIL", "uk@example.com")}
 _appeal_counter = itertools.count(1)
 FAKE_USER_ADDRESS = {
     "user_id": 1,
@@ -43,19 +44,21 @@ FAKE_USER_ADDRESS = {
 
 
 
-def handle_appeal_dialog(user_id, message_text, state) : 
+def handle_appeal_dialog(user_id, message_text, state):
     step = state["step"]
     data = state["data"]
-
-    if step == "waiting_category": 
-        return _appeal_category_step(user_id, message_text)
-    elif step == "waiting_message" : 
-        return _appeal_message_step(user_id, message_text, data)
-    elif step == "waiting_photo" : 
-        return _appeal_photo_step(user_id, message_text, data)
+    normalized = texts.normalize_input(message_text)
+    if step == "waiting_category":
+        return _appeal_category_step(user_id, normalized)
+    elif step == "waiting_message":
+        return _appeal_message_step(user_id, message_text, data)   # текст жильца без изменений
+    elif step == "waiting_photo":
+        return _appeal_photo_step(user_id, normalized, data)
+    elif step == "waiting_contact":
+        return _appeal_contact_step(user_id, normalized, data)
     elif step == "waiting_confirm":
-        return _appeal_confirm_step(user_id, message_text, data)
-    else :
+        return _appeal_confirm_step(user_id, normalized, data)
+    else:
         states.clear_state(user_id)
         return texts.ERROR, keyboards.main_menu()
 
@@ -77,27 +80,69 @@ def _appeal_message_step(user_id, message_text, data):
     return texts.ASK_PHOTO, keyboards.skip_photo_menu()
 
 def _appeal_photo_step(user_id, message_text, data):
-    if message_text == texts.normalize_input(texts.BTN_SKIP_PHOTO): 
-        data["photo"] = None 
-    else: 
-        data["photo"] = message_text #заглушка здесь будет file_id
+    if message_text == texts.normalize_input(texts.BTN_SKIP_PHOTO):
+        data["photo"] = None
+    else:
+        data["photo"] = message_text  # заглушка, здесь будет file_id
+    states.set_state(user_id, "waiting_contact", data)
+    return texts.ASK_CONTACT, keyboards.contact_menu()
+
+def _format_contact(profile):
+    if not profile:
+        return None
+    parts = []
+    if profile.get("name"):
+        parts.append(profile["name"])
+    if profile.get("username"):
+        parts.append(f'@{profile["username"]}')
+    return " ".join(parts) or None
+
+
+def _appeal_contact_step(user_id, message_text, data):
+    if message_text == texts.normalize_input(texts.BTN_CONTACT_YES):
+        data["contact"] = _format_contact(profiles.get(user_id))
+    elif message_text == texts.normalize_input(texts.BTN_CONTACT_NO):
+        data["contact"] = None
+    else:
+        return texts.UNKNOWN, keyboards.contact_menu()
+
     states.set_state(user_id, "waiting_confirm", data)
 
     address = FAKE_USER_ADDRESS
     address_str = f'{address["street"]}, {address["house_number"]}'
     confirm_text = texts.APPEAL_CONFIRM.format(
-        address = address_str, 
-        category = data["category"], 
-        message = data["message"], 
-        company = FAKE_COMPANY["name"],
+        address=address_str,
+        category=data["category"],
+        message=data["message"],
+        contact=data["contact"] or "не указан",
+        company=FAKE_COMPANY["name"],
     )
     return confirm_text, keyboards.confirm_menu()
 
 def _appeal_confirm_step(user_id, message_text, data):
     if message_text == texts.normalize_input(texts.BTN_CONFIRM_YES):
-        appeal_number = next(_appeal_counter)
+        if "number" not in data:                
+            data["number"] = next(_appeal_counter)
+
+        address = FAKE_USER_ADDRESS
+        address_str = f'{address["street"]}, {address["house_number"]}'
+        print("DEBUG contact перед отправкой:", repr(data.get("contact")), flush=True)
+        try:
+            mailer.send_appeal(
+                number=data["number"],
+                to_email=FAKE_COMPANY["email"],
+                company=FAKE_COMPANY["name"],
+                category=data["category"],
+                message=data["message"],
+                address=address_str,
+                contact=data.get("contact"),
+            )
+        except mailer.MailError as error:
+            print("send_appeal error:", error, flush=True)
+            return texts.APPEAL_SEND_FAILED, keyboards.confirm_menu()   
+
         states.clear_state(user_id)
-        reply_text = texts.APPEAL_SENT.format(number=appeal_number, company=FAKE_COMPANY["name"])
+        reply_text = texts.APPEAL_SENT.format(number=data["number"], company=FAKE_COMPANY["name"])
         return reply_text, keyboards.main_menu()
 
     elif message_text == texts.normalize_input(texts.BTN_CONFIRM_NO):
@@ -142,3 +187,4 @@ def handle_current_outage(message_text) :
 
     reply_keyboard = keyboards.main_menu()
     return reply_text, reply_keyboard 
+

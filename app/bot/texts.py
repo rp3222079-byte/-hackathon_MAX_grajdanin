@@ -41,7 +41,7 @@ APPEAL_CONFIRM = (
     "Текст: {message}\n\n"
     "Отправляем в {company}?"
 )
-APPEAL_SENT = "Обращение {number} отправлено в {company}.\n\nОтвет придёт на почту компании, а я сообщу о смене статуса."
+APPEAL_SENT = "Обращение №{number} отправлено в {company}.\n\nОтвет управляющей компании придёт на её почту. Сохраните номер обращения."
 APPEAL_NO_COMPANY = (
     "Для вашего дома не нашлась управляющая компания. "
     "Напишите организаторам сервиса или проверьте адрес."
@@ -62,6 +62,23 @@ STATUS_LABELS = {
 BTN_SKIP_PHOTO = "Пропустить"
 BTN_CONFIRM_YES = "Отправить"
 BTN_CONFIRM_NO = "Отменить"
+ASK_CONTACT = "Указать ваше имя и контакт в MAX в обращении? Управляющая компания увидит их в письме и сможет связаться с вами. Это по желанию."
+BTN_CONTACT_YES = "Указать контакт"
+BTN_CONTACT_NO = "Не указывать"
+APPEAL_CONFIRM = (
+    "Проверьте обращение:\n\n"
+    "Адрес: {address}\n"
+    "Тема: {category}\n"
+    "Контакт: {contact}\n"
+    "Текст: {message}\n\n"
+    "Отправляем в {company}?"
+)
+
+APPEAL_SEND_FAILED = "Не получилось отправить обращение в управляющую компанию. Нажмите «Отправить» ещё раз или попробуйте позже."
+
+BTN_ADD_ADDRESS = "Добавить адрес"
+MY_ADDRESSES = "Ваши адреса:\n{addresses}"
+ADDRESS_EXISTS = "Этот адрес уже добавлен."
 
 def normalize_input(text: str) -> str:
     return text.strip().lower()
