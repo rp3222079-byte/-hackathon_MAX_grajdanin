@@ -9,26 +9,30 @@
     uvicorn app.main:app --reload
 """
 from contextlib import asynccontextmanager
-from pathlib import Path
-
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import IntegrityError
 
 from app.db import init_db
 from app.errors import ConflictError, DomovoyError, NotFoundError
-from app.routers import addresses, appeals, outages, users, companies
-
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+from app.routers import addresses, appeals, companies, outages, uk, users
+from app.security import require_api_key
 
 DESCRIPTION = """
-API сервиса «Домовой»: через него работают бот в MAX и сайт.
+Внутренний API сервиса «Домовой»: через него работает бот в MAX.
+
+Все методы требуют заголовок `X-API-Key` со значением `API_TOKEN`
+(кнопка **Authorize**). Если `API_TOKEN` пуст, проверка выключена.
 
 * **Пользователи** — регистрация жильца, его адреса и настройки уведомлений.
-* **Отключения** — список и фильтр по адресу: `GET /outages?city=Новосибирск&street=Ленина&house_number=11`.
-* **Обращения** — приём обращения жильца и его статус.
+* **Отключения** — список и фильтр по адресу: `GET /outages?city=Новосибирск&street=Ленина&house_number=11`,
+  очередь уведомлений для бота.
+* **Обращения** — приём обращения, статусы и очередь уведомлений о них.
+* **Управляющие компании** — города, подсказка улиц, поиск УК по дому.
+
+Страница обращения для УК (`/uk/appeals/{номер}?sig=…`) открывается по ссылке
+из письма и защищена подписью.
 
 Ошибки отдаются одинаково: `404` — записи нет, `409` — такая уже есть,
 `422` — не прошла проверка полей, в `errors` перечислены сами поля.
@@ -49,13 +53,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(users.router)
-app.include_router(addresses.router)
-app.include_router(outages.router)
-app.include_router(appeals.router)
-app.include_router(companies.router)
+protected = [Depends(require_api_key)]
+app.include_router(users.router, dependencies=protected)
+app.include_router(addresses.router, dependencies=protected)
+app.include_router(outages.router, dependencies=protected)
+app.include_router(appeals.router, dependencies=protected)
+app.include_router(companies.router, dependencies=protected)
+app.include_router(uk.router)
 
-@app.get("/health", tags="служебное", summary="Проверка, что API живой")
+
+@app.get("/", tags=["служебное"], summary="О сервисе")
+def root() -> dict[str, str]:
+    return {"service": "Домовой API", "docs": "/docs", "health": "/health"}
+
+
+@app.get("/health", tags=["служебное"], summary="Проверка, что API живой")
 def health() -> dict[str, str]:
     """Отвечает, пока API работает: без него не запустится и бот."""
     return {"status": "ok"}
@@ -96,6 +108,3 @@ async def validation_error_handler(_: Request, exc: RequestValidationError) -> J
         content={"detail": "Проверьте заполнение полей", "errors": errors},
     )
 
-
-# сайт лежит в web/ и отдаётся последним, чтобы не перехватывать API
-app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

@@ -24,7 +24,7 @@ users ──< outage_notifications >── outages
 | `addresses` | адреса жильца, по ним приходят уведомления |
 | `management_companies` | управляющие компании, получатели обращений |
 | `company_houses` | дома, закреплённые за управляющими компаниями |
-| `outages` | отключения, собранные с сайта поставщика |
+| `outages` | отключения воды и света (в MVP — демо-данные `app/seed.py`) |
 | `outage_notifications` | отметки «жилец уже уведомлён», защита от повторной рассылки |
 | `appeals` | обращения жильцов в управляющую компанию |
 
@@ -35,7 +35,7 @@ users ──< outage_notifications >── outages
 | Колонка | Тип | Ограничения | Про смысл |
 |---|---|---|---|
 | `id` | int | primary key | |
-| `telegram_id` | str(64) | unique, index | аккаунт в мессенджере; пусто у тех, кто пользуется только сайтом |
+| `max_user_id` | str(64) | unique, index | `user_id` жильца в MAX: по нему бот отправляет сообщения (до миграции 4 — `telegram_id`) |
 | `notify_outages` | bool | default `true` | общий выключатель уведомлений |
 | `notify_water` | bool | default `true` | |
 | `notify_electricity` | bool | default `true` | |
@@ -138,9 +138,12 @@ starts_at)` — та же строка источника повторно в б
 | `address_text` | str(400) | | адрес текстом: обращение может прийти и без заведённого адреса |
 | `subject` | str(200) | | тема |
 | `text` | text | | текст обращения |
-| `photo_path` | str(400) | null | путь к фото |
-| `status` | str(32) | index, default `new` | `new` → `sent` → `in_progress` → `resolved` / `failed`, константы `APPEAL_STATUSES` |
-| `created_at` | datetime | server default `now()` | |
+| `photo_path` | str(400) | null | сколько фото приложено к письму (сами фото хранятся только в письме) |
+| `contact` | str(255) | null | контакт жильца для УК — только с его согласия |
+| `uk_comment` | text | null | комментарий УК со страницы обращения, жилец видит его в боте |
+| `notified_status` | str(32) | null | последний статус, о котором бот сообщил жильцу; расхождение со `status` — повод для уведомления |
+| `status` | str(32) | index, default `new` | `new` → `sent` / `failed` (ставит бот) → `in_progress` → `resolved` (ставит УК), константы `APPEAL_STATUSES` |
+| `created_at` | datetime | default — местное время `TIMEZONE` | |
 | `updated_at` | datetime | server default `now()`, on update | |
 | `sent_at` | datetime | null | когда ушло письмо в УК |
 | `resolved_at` | datetime | null | когда УК ответила |
@@ -169,12 +172,20 @@ def add_appeals_photo(conn: Connection) -> None:
 `Base.metadata.create_all` создаёт только новые таблицы: изменили колонку —
 нужна миграция, а не удаление базы.
 
+| № | Название | Что делает |
+|---|---|---|
+| 1 | `initial_schema` | таблицы по `app/models.py` |
+| 2 | `add_notify_hours_before` | `users.notify_hours_before` |
+| 3 | `clear_fake_uk_emails` | убирает выдуманные адреса `@gis.jkh` |
+| 4 | `rename_telegram_id` | `users.telegram_id` → `users.max_user_id` |
+| 5 | `appeal_contact_and_status_notice` | `appeals.contact`, `uk_comment`, `notified_status`; старым обращениям `notified_status = status`, чтобы не было лишних уведомлений |
+
 ## Что упрощено
 
 - Значения, которые повторяются в коде (типы отключений, статусы обращений),
   лежат константами в `app/models.py`, а не в справочниках: их набор можно
   расширить без правки схемы.
-- Своей таблицы у жильца нет: он опознаётся по аккаунту в мессенджере.
+- Логина и пароля у жильца нет: он опознаётся по `user_id` в MAX.
 - Уличные и домовые ключи для сопоставления не хранятся, улица нормализуется
-  на лету в `app/services/matching.py`.
+  на лету (`app/services/addresses.py`, `app/services/matching.py`).
 - Полноценные миграции Alembic — следующий шаг после хакатона.

@@ -4,18 +4,15 @@
 в базе: номер, адрес и получатель.
 """
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import (
-    APPEAL_STATUS_NEW,
-    Address,
-    Appeal,
-    CompanyHouse,
-    ManagementCompany,
-)
-from app.services.addresses import normalize_street
+from app.models import APPEAL_STATUS_NEW, Address, Appeal, ManagementCompany
+from app.services.directory import find_company
 
 APPEAL_NUMBER_FORMAT = "DM-{:05d}"
+# Два обращения в одну секунду могут получить один номер: тогда пробуем снова
+NUMBER_ATTEMPTS = 3
 
 
 def next_appeal_number(db: Session) -> str:
@@ -27,7 +24,7 @@ def next_appeal_number(db: Session) -> str:
 
 
 def format_address_text(address: Address) -> str:
-    """Адрес строкой для обращения: «Новосибирск, ул. Ленина, 11 к2, кв. 5»."""
+    """Адрес строкой для обращения: «Новосибирск, ул. Ленина, 11к2, кв. 5»."""
     house = f"{address.house_number}{address.house_corpus or ''}"
     parts = [address.city, address.street, house]
     if address.flat:
@@ -36,23 +33,10 @@ def format_address_text(address: Address) -> str:
 
 
 def find_company_for_address(db: Session, address: Address) -> ManagementCompany | None:
-    """УК, которой закреплён дом жильца; None — если дома в справочнике нет.
-
-    Улица сравнивается через normalize_street: жилец пишет «ул. Ленина»,
-    а в справочнике «улица Ленина» — это один и тот же дом.
-    """
-    houses = db.scalars(
-        select(CompanyHouse).where(CompanyHouse.house_number == address.house_number)
-    ).all()
-    city = address.city.strip().lower()
-    street = normalize_street(address.street)
-    for house in houses:
-        if house.city.strip().lower() != city or normalize_street(house.street) != street:
-            continue
-        if address.house_corpus and house.house_corpus != address.house_corpus:
-            continue
-        return db.get(ManagementCompany, house.company_id)
-    return None
+    """УК, которой закреплён дом жильца; None — если дома в справочнике нет."""
+    return find_company(
+        db, address.city, address.street, address.house_number, address.house_corpus
+    )
 
 
 def create_appeal(
@@ -64,6 +48,7 @@ def create_appeal(
     subject: str,
     text: str,
     photo_path: str | None = None,
+    contact: str | None = None,
 ) -> Appeal:
     """Сохраняет обращение и подставляет номер и УК.
 
@@ -75,22 +60,29 @@ def create_appeal(
 
     if address is not None and not address_text:
         address_text = format_address_text(address)
+    company = find_company_for_address(db, address) if address is not None else None
 
-    appeal = Appeal(
-        number=next_appeal_number(db),
-        user_id=user_id,
-        address_id=address.id if address else None,
-        address_text=address_text,
-        subject=subject,
-        text=text,
-        photo_path=photo_path,
-        status=APPEAL_STATUS_NEW,
-    )
-    if address is not None:
-        company = find_company_for_address(db, address)
-        if company is not None:
-            appeal.company_id = company.id
-    db.add(appeal)
-    db.commit()
-    db.refresh(appeal)
-    return appeal
+    for attempt in range(1, NUMBER_ATTEMPTS + 1):
+        appeal = Appeal(
+            number=next_appeal_number(db),
+            user_id=user_id,
+            address_id=address.id if address else None,
+            company_id=company.id if company else None,
+            address_text=address_text,
+            subject=subject,
+            text=text,
+            photo_path=photo_path,
+            contact=contact,
+            status=APPEAL_STATUS_NEW,
+        )
+        db.add(appeal)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            if attempt == NUMBER_ATTEMPTS:
+                raise
+            continue
+        db.refresh(appeal)
+        return appeal
+    raise RuntimeError("недостижимо")

@@ -53,36 +53,62 @@ _STREET_RE = re.compile(
 )
 
 
-#Объявляем функцию normalize_street: raw — строка на входе, str после -> — строка на выходе
-def normalize_street(raw: str) ->str: 
-    return _STREET_RE.sub("", raw.strip().lower()).strip()
-    
-# функция возвращает кортеж из числа int и строки или None
-def parse_house_fragment(fragment: str) -> tuple[int, str | None] :
+def normalize_street(raw: str) -> str:
+    """«ул. Ленина», «улица Ленина» и «Ленина» → «ленина»."""
+    return _STREET_RE.sub("", raw.strip().lower().replace("ё", "е")).strip()
+
+
+# Как пишут корпус и строение: приводим к короткой форме «к2», «с1»
+_CORPUS_WORDS = (
+    ("корпус", "к"),
+    ("корп", "к"),
+    ("строение", "с"),
+    ("стр", "с"),
+)
+
+
+def normalize_corpus(raw: str | None) -> str | None:
+    """«Корп. 2», « к 2», «К2» → «к2»; пусто → None."""
+    if raw is None:
+        return None
+    corpus = raw.strip().lower().replace(" ", "").replace(".", "")
+    for word, short in _CORPUS_WORDS:
+        if corpus.startswith(word):
+            corpus = short + corpus[len(word):]
+            break
+    return corpus or None
+
+
+def parse_house_fragment(fragment: str) -> tuple[int, str | None]:
+    """«12» → (12, None), «12к2» → (12, "к2"). Без номера — ValueError."""
     fragment = fragment.strip()
-    if fragment.isdigit() : 
+    if fragment.isdigit():
         return int(fragment), None
 
     i = 0
-    while i < len(fragment) and fragment[i].isdigit(): 
-        i+=1
-    number_part = fragment[:i]
-    corpus_part = fragment[i:]
-    return int(number_part), corpus_part
+    while i < len(fragment) and fragment[i].isdigit():
+        i += 1
+    if i == 0:
+        raise ValueError(f"в «{fragment}» нет номера дома")
+    return int(fragment[:i]), normalize_corpus(fragment[i:])
 
-def expand_fragment(fragment : str) -> set[tuple[int, str | None]]: 
+
+def expand_fragment(fragment: str) -> set[tuple[int, str | None]]:
+    """«1-5» → пять домов без корпуса, «12к2» → один дом."""
     fragment = fragment.strip()
     if "-" in fragment:
-        start_str, end_str = fragment.split("-")
+        start_str, end_str = fragment.split("-", 1)
         start = int(start_str.strip())
         end = int(end_str.strip())
         return {(n, None) for n in range(start, end + 1)}
 
     return {parse_house_fragment(fragment)}
 
-# финальая функция рабивает всю строку по запятым и объеденяет результат 
-def parse_house_list(raw: str) -> set[tuple[int, str | None]] : 
+
+def parse_house_list(raw: str) -> set[tuple[int, str | None]]:
+    """Разбивает строку источника по запятым и объединяет дома."""
     result = set()
     for fragment in raw.split(","):
-        result |= expand_fragment(fragment)
+        if fragment.strip():
+            result |= expand_fragment(fragment)
     return result

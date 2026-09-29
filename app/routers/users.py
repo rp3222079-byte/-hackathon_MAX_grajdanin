@@ -15,15 +15,15 @@ router = APIRouter(prefix="/users", tags=["пользователи"])
 def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> User:
     """Создаёт жильца.
 
-    Повторный запрос с тем же telegram_id возвращает уже созданного жильца:
+    Повторный запрос с тем же max_user_id возвращает уже созданного жильца:
     бот здоровается при каждом запуске, дублей быть не должно.
     """
-    if payload.telegram_id:
-        existing = db.scalar(select(User).where(User.telegram_id == payload.telegram_id))
+    if payload.max_user_id:
+        existing = db.scalar(select(User).where(User.max_user_id == payload.max_user_id))
         if existing is not None:
             return existing
 
-    user = User(telegram_id=payload.telegram_id)
+    user = User(max_user_id=payload.max_user_id)
     db.add(user)
     db.commit()
     db.refresh(user)

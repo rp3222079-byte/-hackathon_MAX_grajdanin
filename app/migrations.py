@@ -101,6 +101,40 @@ def clear_fake_uk_emails(conn: Connection) -> None:
     )
 
 
+def _columns(conn: Connection, table: str) -> set[str]:
+    return {column["name"] for column in inspect(conn).get_columns(table)}
+
+
+@migration(4, "rename_telegram_id")
+def rename_telegram_id(conn: Connection) -> None:
+    """users.telegram_id → users.max_user_id: бот работает в MAX, а не в Telegram.
+
+    На новой базе колонка уже называется правильно (миграция 1 берёт
+    схему из app/models.py), тогда ничего не делаем.
+    """
+    if "telegram_id" in _columns(conn, "users"):
+        conn.execute(text("ALTER TABLE users RENAME COLUMN telegram_id TO max_user_id"))
+
+
+@migration(5, "appeal_contact_and_status_notice")
+def appeal_contact_and_status_notice(conn: Connection) -> None:
+    """Контакт жильца, комментарий УК и отметка «жилец уже знает о статусе».
+
+    Уже существующим обращениям ставим notified_status = status, чтобы бот
+    после обновления не разослал уведомления о старых статусах.
+    """
+    existing = _columns(conn, "appeals")
+    added = {
+        "contact": "VARCHAR(255)",
+        "uk_comment": "TEXT",
+        "notified_status": "VARCHAR(32)",
+    }
+    for column, column_type in added.items():
+        if column not in existing:
+            conn.execute(text(f"ALTER TABLE appeals ADD COLUMN {column} {column_type}"))
+    conn.execute(text("UPDATE appeals SET notified_status = status WHERE notified_status IS NULL"))
+
+
 def applied_versions(conn: Connection) -> set[int]:
     """Номера уже применённых миграций."""
     SCHEMA_MIGRATIONS.create(conn, checkfirst=True)

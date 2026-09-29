@@ -1,4 +1,4 @@
-"""Отключения: список и фильтр по адресу.
+"""Отключения: список, фильтр по адресу и уведомления жильцам.
 
 Фильтр по дому идёт через parse_house_list, потому что список домов
 хранится строкой источника: «1-15, 12к2». Город и улица сравниваются
@@ -6,15 +6,21 @@
 """
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Query, Response, status
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.errors import NotFoundError
 from app.models import Outage
-from app.schemas import OutageOut, UtilityName
-from app.services.addresses import normalize_street, parse_house_list
+from app.routers.common import require_user
+from app.schemas import OutageNotificationOut, OutageNotified, OutageOut, UtilityName
+from app.services.matching import outage_covers
+from app.services.notifications import (
+    address_line,
+    mark_outage_notified,
+    pending_outage_notifications,
+)
 
 router = APIRouter(prefix="/outages", tags=["отключения"])
 
@@ -31,6 +37,9 @@ def list_outages(
     utility: UtilityName | None = Query(default=None, description="Ресурс: water или electricity."),
     starts_after: datetime | None = Query(default=None, description="Отключения, которые начались не раньше."),
     starts_before: datetime | None = Query(default=None, description="Отключения, которые начались не позже."),
+    ends_after: datetime | None = Query(
+        default=None, description="Только те, что ещё не закончились к этому моменту."
+    ),
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -47,6 +56,8 @@ def list_outages(
         query = query.where(Outage.starts_at >= starts_after)
     if starts_before:
         query = query.where(Outage.starts_at <= starts_before)
+    if ends_after:
+        query = query.where(or_(Outage.ends_at.is_(None), Outage.ends_at > ends_after))
     query = query.order_by(Outage.starts_at.desc(), Outage.id.desc())
 
     if city or street or house_number is not None:
@@ -55,6 +66,41 @@ def list_outages(
         return found[offset : offset + limit]
 
     return list(db.scalars(query.offset(offset).limit(limit)))
+
+
+@router.get(
+    "/notifications/pending",
+    response_model=list[OutageNotificationOut],
+    summary="Кого пора предупредить об отключении",
+)
+def list_pending_notifications(db: Session = Depends(get_db)) -> list[OutageNotificationOut]:
+    """Отключения, о которых жильцы ещё не знают, с учётом их настроек.
+
+    Бот раз в минуту забирает этот список, отправляет сообщения и отмечает
+    каждое через POST /outages/{id}/notified.
+    """
+    return [
+        OutageNotificationOut(
+            user_id=item.user.id,
+            max_user_id=item.user.max_user_id,
+            address=address_line(item.address),
+            outage=OutageOut.model_validate(item.outage),
+        )
+        for item in pending_outage_notifications(db)
+    ]
+
+
+@router.post(
+    "/{outage_id}/notified",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Отметить, что жилец уведомлён",
+)
+def mark_notified(outage_id: int, payload: OutageNotified, db: Session = Depends(get_db)) -> Response:
+    """Больше не присылать жильцу это отключение."""
+    get_outage(outage_id, db)
+    require_user(db, payload.user_id)
+    mark_outage_notified(db, payload.user_id, outage_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{outage_id}", response_model=OutageOut, summary="Одно отключение")
@@ -74,15 +120,12 @@ def matches_place(
     house_corpus: str | None,
 ) -> bool:
     """Задевает ли отключение этот адрес: город, улица совпали и дом есть в списке."""
-    if city and outage.city.strip().lower() != city.strip().lower():
-        return False
-    if street and normalize_street(street) != normalize_street(outage.street):
-        return False
-    if house_number is None:
-        return True
-    try:
-        houses = parse_house_list(outage.houses_raw)
-    except ValueError:
-        # кривой список домов в источнике не должен ронять весь ответ
-        return False
-    return (house_number, house_corpus) in houses
+    return outage_covers(
+        outage.city,
+        outage.street,
+        outage.houses_raw,
+        city=city,
+        street=street,
+        house_number=house_number,
+        house_corpus=house_corpus,
+    )

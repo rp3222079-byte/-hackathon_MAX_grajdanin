@@ -1,6 +1,6 @@
 """Адреса жильца: добавление, список, удаление.
 
-Отключения по адресу бот и сайт смотрят через GET /outages, а не здесь.
+Отключения по адресу бот смотрит через GET /outages, а не здесь.
 """
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
@@ -77,8 +77,17 @@ def get_address(address_id: int, db: Session = Depends(get_db)) -> Address:
 
 @router.delete("/addresses/{address_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Удалить адрес")
 def delete_address(address_id: int, db: Session = Depends(get_db)) -> Response:
-    """Удаляет адрес жильца."""
-    db.delete(require_address(db, address_id))
+    """Удаляет адрес жильца. Если он был основным, основным станет следующий."""
+    address = require_address(db, address_id)
+    user_id, was_primary = address.user_id, address.is_primary
+    db.delete(address)
+    db.flush()
+    if was_primary:
+        successor = db.scalar(
+            select(Address).where(Address.user_id == user_id).order_by(Address.id).limit(1)
+        )
+        if successor is not None:
+            successor.is_primary = True
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

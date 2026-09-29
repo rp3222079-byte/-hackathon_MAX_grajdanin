@@ -10,7 +10,7 @@ SQLAlchemy, поэтому у них включён from_attributes.
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.models import (
     APPEAL_STATUS_FAILED,
@@ -22,6 +22,8 @@ from app.models import (
     UTILITY_TYPES,
     UTILITY_WATER,
 )
+from app.security import appeal_link
+from app.services.addresses import normalize_corpus
 
 UtilityName = Literal[UTILITY_WATER, UTILITY_ELECTRICITY]
 AppealStatus = Literal[
@@ -46,18 +48,18 @@ def _strip(value: str | None) -> str | None:
 
 
 class UserCreate(BaseModel):
-    """Регистрация жильца: тот же telegram_id возвращает прежнего жильца."""
+    """Регистрация жильца: тот же max_user_id возвращает прежнего жильца."""
 
-    telegram_id: str | None = Field(
+    max_user_id: str | None = Field(
         default=None,
         max_length=64,
         examples=["1001"],
-        description="Аккаунт в мессенджере MAX; пусто у тех, кто пользуется только сайтом.",
+        description="Идентификатор жильца в MAX (user_id).",
     )
 
-    @field_validator("telegram_id")
+    @field_validator("max_user_id")
     @classmethod
-    def strip_telegram_id(cls, value: str | None) -> str | None:
+    def strip_max_user_id(cls, value: str | None) -> str | None:
         return _strip(value)
 
 
@@ -74,7 +76,7 @@ class UserOut(ORMModel):
     """Жилец с его адресами."""
 
     id: int
-    telegram_id: str | None
+    max_user_id: str | None
     notify_outages: bool
     notify_water: bool
     notify_electricity: bool
@@ -105,10 +107,9 @@ class AddressCreate(BaseModel):
     @classmethod
     def normalize_corpus(cls, value: str | None) -> str | None:
         """«2К» и «к2» — один и тот же корпус, приводим к виду «к2»."""
-        corpus = _strip(value)
-        if corpus is None:
-            return None
-        corpus = corpus.lower().replace(" ", "")
+        corpus = normalize_corpus(value)
+        if corpus is None or not corpus[0].isdigit():
+            return corpus
         digits = "".join(char for char in corpus if char.isdigit())
         letters = "".join(char for char in corpus if not char.isdigit())
         return f"{letters}{digits}"
@@ -157,6 +158,9 @@ class AppealCreate(BaseModel):
     subject: str = Field(min_length=1, max_length=200, examples=["Не горит свет в подъезде"])
     text: str = Field(min_length=1, max_length=5000, examples=["В подъезде не горит свет вторые сутки."])
     photo_path: str | None = Field(default=None, max_length=400)
+    contact: str | None = Field(
+        default=None, max_length=255, description="Контакт жильца для УК, только с его согласия."
+    )
 
     @field_validator("address_text", "subject", "text")
     @classmethod
@@ -178,6 +182,15 @@ class AppealStatusUpdate(BaseModel):
     """Смена статуса обращения: ставит УК (или бот — после отправки письма)."""
 
     status: AppealStatus
+    comment: str | None = Field(
+        default=None, max_length=2000, description="Комментарий УК: жилец увидит его в боте."
+    )
+
+
+class AppealNotified(BaseModel):
+    """Отметка бота: жилец узнал о статусе обращения."""
+
+    status: AppealStatus
 
 
 class AppealOut(ORMModel):
@@ -192,10 +205,28 @@ class AppealOut(ORMModel):
     subject: str
     text: str
     photo_path: str | None
+    contact: str | None = None
+    uk_comment: str | None = None
     status: str
     created_at: datetime
     sent_at: datetime | None
     resolved_at: datetime | None
+
+    @computed_field(description="Ссылка для УК: открыть обращение и сменить статус.")
+    @property
+    def uk_link(self) -> str:
+        return appeal_link(self.number)
+
+
+class AppealUpdateOut(BaseModel):
+    """Обращение, о новом статусе которого бот ещё не сообщил жильцу."""
+
+    number: str
+    status: str
+    subject: str
+    uk_comment: str | None
+    max_user_id: str
+    company_name: str | None
 
 
 UserOut.model_rebuild()
@@ -209,3 +240,17 @@ class CompanyOut(ORMModel):
     phone: str | None
     website: str | None
     city: str
+
+class OutageNotificationOut(BaseModel):
+    """Уведомление об отключении, которое бот должен отправить жильцу."""
+
+    user_id: int
+    max_user_id: str
+    address: str
+    outage: OutageOut
+
+
+class OutageNotified(BaseModel):
+    """Отметка бота: жилец получил уведомление об отключении."""
+
+    user_id: int = Field(ge=1)

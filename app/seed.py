@@ -25,6 +25,7 @@ from app.models import (
     OutageNotification,
 )
 from app.services.addresses import parse_house_list
+from app.timeutil import local_now
 
 logger = logging.getLogger("domovoy.seed")
 
@@ -53,6 +54,14 @@ OUTAGE_REASONS = {
 STARTS_IN_HOURS = (-1, 2, 5, 18, 30, 72)
 DURATIONS_HOURS = (3, 4, 6, 8, 9)
 
+# Адреса из сценария проверки в README: отключения на них предсказуемы.
+# На улице Ленина вода отключится через час — меньше, чем стандартные
+# «предупреждать за 2 часа», поэтому уведомление придёт сразу после ввода адреса.
+DEMO_FIXED = {
+    "улица Ленина": (UTILITY_WATER, "Плановая замена участка трубопровода", 1, 4),
+    "улица Мира": (UTILITY_ELECTRICITY, "Плановый ремонт подстанции", -1, 5),
+}
+
 
 def read_company_rows() -> list[dict[str, str]]:
     """Читает справочник УК из data/companies.csv."""
@@ -75,6 +84,8 @@ def demo_streets() -> list[tuple[str, str, str]]:
 
 def demo_outage_params(street: str) -> tuple[str, str, int, int]:
     """Ресурс, причина, начало и длительность отключения — стабильно по улице."""
+    if street in DEMO_FIXED:
+        return DEMO_FIXED[street]
     generator = random.Random(street)
     utility = generator.choice(UTILITY_TYPES)
     reason = generator.choice(OUTAGE_REASONS[utility])
@@ -140,7 +151,7 @@ def load_companies(db: Session) -> int:
 
 def load_outages(db: Session) -> int:
     """Создаёт демо-отключение на каждую улицу справочника, возвращает их число."""
-    now = datetime.now()
+    now = local_now()
     created = 0
 
     for city, street, houses_raw in demo_streets():
@@ -152,7 +163,8 @@ def load_outages(db: Session) -> int:
             "houses_raw": houses_raw,
             "reason": reason,
         }
-        starts_at = now + timedelta(hours=starts_in_hours)
+        # как у настоящих поставщиков: работы начинаются в начале часа
+        starts_at = (now + timedelta(hours=starts_in_hours)).replace(minute=0, second=0)
         ends_at = starts_at + timedelta(hours=duration_hours)
         if _outage_exists(db, item, starts_at):
             continue

@@ -1,10 +1,10 @@
-from datetime import datetime
-"""Обращения жильцов: создать и посмотреть.
+"""Обращения жильцов: создать, посмотреть, сменить статус.
 
-Письмо в УК отправляется отдельно (app/services/mailer.py), поэтому
-статус обращения здесь только «new».
+Письмо в УК отправляет бот (app/services/mailer.py) и сам ставит статус
+sent или failed. Статусы in_progress и resolved ставит УК на странице
+обращения по ссылке из письма (app/routers/uk.py).
 """
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,8 +12,17 @@ from app.db import get_db
 from app.errors import NotFoundError
 from app.models import Appeal
 from app.routers.common import require_address, require_user
-from app.schemas import AppealCreate, AppealOut, AppealStatus, AppealStatusUpdate
+from app.schemas import (
+    AppealCreate,
+    AppealNotified,
+    AppealOut,
+    AppealStatus,
+    AppealStatusUpdate,
+    AppealUpdateOut,
+)
 from app.services.appeals import create_appeal
+from app.services.notifications import pending_appeal_updates
+from app.services.statuses import change_status
 
 router = APIRouter(prefix="/appeals", tags=["обращения"])
 
@@ -22,9 +31,8 @@ router = APIRouter(prefix="/appeals", tags=["обращения"])
 def post_appeal(payload: AppealCreate, db: Session = Depends(get_db)) -> Appeal:
     """Принимает обращение жильца.
 
-    Возвращает номер обращения: по нему жилец спросит о судьбе письма,
-    а панель УК — о статусе. Если адрес заведён в профиле, УК ищется
-    по дому и письмо уходит именно ей.
+    Возвращает номер обращения и ссылку для УК. Если адрес заведён
+    в профиле, УК ищется по дому и письмо уходит именно ей.
     """
     user = require_user(db, payload.user_id) if payload.user_id else None
     address = require_address(db, payload.address_id) if payload.address_id else None
@@ -39,6 +47,7 @@ def post_appeal(payload: AppealCreate, db: Session = Depends(get_db)) -> Appeal:
         subject=payload.subject,
         text=payload.text,
         photo_path=payload.photo_path,
+        contact=payload.contact,
     )
 
 
@@ -51,7 +60,7 @@ def list_appeals(
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Appeal]:
-    """Отдаёт обращения, новые сверху — так их видит панель УК."""
+    """Отдаёт обращения, новые сверху."""
     query = select(Appeal)
     if user_id:
         query = query.where(Appeal.user_id == user_id)
@@ -62,27 +71,57 @@ def list_appeals(
     return list(db.scalars(query.order_by(Appeal.id.desc()).offset(offset).limit(limit)))
 
 
+@router.get(
+    "/updates/pending",
+    response_model=list[AppealUpdateOut],
+    summary="Новые статусы, о которых жилец не знает",
+)
+def list_pending_updates(db: Session = Depends(get_db)) -> list[AppealUpdateOut]:
+    """Обращения, которые УК перевела в работу или решила.
+
+    Бот забирает список, пишет жильцу и отмечает через
+    POST /appeals/{number}/notified — отметка хранится в базе,
+    поэтому перезапуск бота ничего не теряет и не дублирует.
+    """
+    return [
+        AppealUpdateOut(
+            number=appeal.number,
+            status=appeal.status,
+            subject=appeal.subject,
+            uk_comment=appeal.uk_comment,
+            max_user_id=appeal.user.max_user_id,
+            company_name=appeal.company.name if appeal.company else None,
+        )
+        for appeal in pending_appeal_updates(db)
+    ]
+
+
+@router.post(
+    "/{number}/notified",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Отметить, что жилец узнал о статусе",
+)
+def mark_notified(number: str, payload: AppealNotified, db: Session = Depends(get_db)) -> Response:
+    appeal = _require_appeal(db, number)
+    appeal.notified_status = payload.status
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.patch("/{number}", response_model=AppealOut, summary="Изменить статус обращения")
 def patch_appeal_status(number: str, payload: AppealStatusUpdate, db: Session = Depends(get_db)) -> Appeal:
-    """Меняет статус: sent/failed ставит бот сразу после отправки письма,
-    in_progress/resolved — управляющая компания по ответу на письмо."""
-    appeal = db.scalar(select(Appeal).where(Appeal.number == number))
-    if appeal is None:
-        raise NotFoundError(f"Обращение {number} не найдено")
-
-    appeal.status = payload.status
-    if payload.status == "sent" and appeal.sent_at is None:
-        appeal.sent_at = datetime.now()
-    if payload.status == "resolved" and appeal.resolved_at is None:
-        appeal.resolved_at = datetime.now()
-    db.commit()
-    db.refresh(appeal)
-    return appeal
+    """Меняет статус: sent/failed ставит бот после отправки письма,
+    in_progress/resolved — управляющая компания."""
+    return change_status(db, _require_appeal(db, number), payload.status, payload.comment)
 
 
 @router.get("/{number}", response_model=AppealOut, summary="Обращение по номеру")
 def get_appeal(number: str, db: Session = Depends(get_db)) -> Appeal:
     """Отдаёт обращение по номеру вида DM-00001."""
+    return _require_appeal(db, number)
+
+
+def _require_appeal(db: Session, number: str) -> Appeal:
     appeal = db.scalar(select(Appeal).where(Appeal.number == number))
     if appeal is None:
         raise NotFoundError(f"Обращение {number} не найдено")

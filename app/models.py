@@ -28,6 +28,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.timeutil import local_now
+
 UTILITY_WATER = "water"
 UTILITY_ELECTRICITY = "electricity"
 UTILITY_TYPES = (UTILITY_WATER, UTILITY_ELECTRICITY)
@@ -53,7 +55,8 @@ class Base(DeclarativeBase):
 class User(Base):
     """Жилец сервиса: его аккаунт в мессенджере и настройки уведомлений.
 
-    telegram_id пустой у тех, кто пользуется только сайтом.
+    max_user_id — идентификатор жильца в MAX: по нему бот находит профиль
+    и отправляет уведомления.
     Настройки нужны, чтобы не слать то, что человека не интересует:
     например, только отключения электричества.
     """
@@ -61,7 +64,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    telegram_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
+    max_user_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
     notify_outages: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default=text("true")
     )
@@ -86,7 +89,7 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<User id={self.id} telegram_id={self.telegram_id}>"
+        return f"<User id={self.id} max_user_id={self.max_user_id}>"
 
 
 class Address(Base):
@@ -139,7 +142,7 @@ class ManagementCompany(Base):
     """Управляющая компания — получатель обращений.
 
     Заполняется из справочника УК (data/companies.csv) парсером
-    с сайта МинЖКХ.
+    и парсером открытых выгрузок ГИС ЖКХ (app/parser).
     """
 
     __tablename__ = "management_companies"
@@ -267,10 +270,18 @@ class Appeal(Base):
     subject: Mapped[str] = mapped_column(String(200))
     text: Mapped[str] = mapped_column(Text)
     photo_path: Mapped[str | None] = mapped_column(String(400))
+    # Контакт жильца для УК: только если жилец сам согласился его передать
+    contact: Mapped[str | None] = mapped_column(String(255))
+    # Комментарий УК при смене статуса — жилец увидит его в боте
+    uk_comment: Mapped[str | None] = mapped_column(Text)
+    # Последний статус, о котором бот уже сообщил жильцу
+    notified_status: Mapped[str | None] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(
         String(32), default=APPEAL_STATUS_NEW, server_default=APPEAL_STATUS_NEW, index=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=local_now, server_default=func.now()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )

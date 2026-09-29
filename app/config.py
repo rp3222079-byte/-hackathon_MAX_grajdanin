@@ -8,5 +8,15 @@ class Settings(BaseSettings):
     # Локально SQLite, в Docker — PostgreSQL
     database_url: str = "sqlite:///./domovoy.db"
 
+    # Общий ключ бота и API (заголовок X-API-Key). Пустой — проверка выключена,
+    # так удобно в тестах и при локальной отладке
+    api_token: str = ""
+
+    # Внешний адрес API: из него собирается ссылка для УК в письме
+    public_base_url: str = "http://localhost:8000"
+
+    # Часовой пояс города: в нём заводятся отключения и показывается время жильцу
+    timezone: str = "Asia/Novosibirsk"
+
 
 settings = Settings()
