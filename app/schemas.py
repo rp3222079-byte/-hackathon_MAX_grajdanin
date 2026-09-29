@@ -191,3 +191,13 @@ class AppealOut(ORMModel):
 
 
 UserOut.model_rebuild()
+
+class CompanyOut(ORMModel):
+    """Управляющая компания в ответе API."""
+
+    id: int
+    name: str
+    email: str
+    phone: str | None
+    website: str | None
+    city: str

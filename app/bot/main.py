@@ -53,6 +53,7 @@ def handle_update(client, update):
         return
 
     user_id = person["user_id"]
+    print(f"[{kind}] user={user_id} text={text!r}", flush=True)
     profiles.remember(user_id, person.get("name"), person.get("username"))
 
     try:
