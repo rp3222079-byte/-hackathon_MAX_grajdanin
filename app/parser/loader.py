@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import CompanyHouse, ManagementCompany
+from app.parser.companies import clean_email
 from app.services.addresses import parse_house_list
 
 
@@ -75,13 +76,13 @@ def _upsert_company(db: Session, row: dict[str, str], result: LoadResult) -> boo
     """Создаёт или обновляет компанию. True — если такой уже был."""
     name = (row.get("name") or "").strip()
     city = (row.get("city") or "").strip()
-    email = (row.get("email") or "").strip()
+    email = clean_email(row.get("email"))
     if not name or not city:
         return True
-    if not email:
-        # поле email в таблице обязательное, а отправлять обращение
-        # некуда: оставляем заведомый адрес-заглушку по ОГРН
-        email = "noreply@gis.jkh"
+    # Поле email в таблице обязательное, но подставлять выдуманный адрес
+    # нельзя: на него обращение не уйдёт, а в справочнике он будет
+    # выглядеть как настоящий. Пустая строка честно говорит, что адреса
+    # у компании нет, — отправка такой компании отклоняется.
 
     company = db.scalar(
         select(ManagementCompany).where(

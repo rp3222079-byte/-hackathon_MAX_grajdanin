@@ -17,6 +17,7 @@ from app.parser.companies import (
     CompanyDirectory,
     House,
     build_directory,
+    clean_email,
     parse_address,
     read_houses,
     read_providers,
@@ -219,6 +220,27 @@ class TestOzhfColumns(unittest.TestCase):
         self.assertEqual(houses[0].number, 27)
 
 
+class TestCleanEmail(unittest.TestCase):
+    def test_берёт_первый_из_нескольких(self):
+        self.assertEqual(clean_email("uk@novosibirsk.ru\nвторой@novosibirsk.ru"), "uk@novosibirsk.ru")
+
+    def test_отбрасывает_прочерк_и_пустоту(self):
+        for value in ("", None, "  ", "-", "нет", "н/д", "—"):
+            with self.subTest(value=value):
+                self.assertEqual(clean_email(value), "")
+
+    def test_убирает_пробелы_и_неразрывные(self):
+        self.assertEqual(clean_email("  uk@novosibirsk.ru  ;"), "uk@novosibirsk.ru")
+        self.assertEqual(clean_email(" uk@novosibirsk.ru"), "uk@novosibirsk.ru")
+
+    def test_не_берёт_текст_похожий_на_почту(self):
+        self.assertEqual(clean_email("телефон 8 383 300-00-99"), "")
+        self.assertEqual(clean_email("uk@localhost"), "")
+
+    def test_берёт_почту_из_многострочной_ячейки(self):
+        self.assertEqual(clean_email("-\nuk@novosibirsk.ru"), "uk@novosibirsk.ru")
+
+
 class TestReadSources(unittest.TestCase):
     def test_читает_поставщиков(self):
         with TemporaryDirectory() as folder:
@@ -284,7 +306,7 @@ class TestBuildDirectory(unittest.TestCase):
         self.assertIn((27, "к2"), company.streets["улица Кирова"])
         self.assertNotIn("1025400000009", directory)
 
-    def test_без_email_подставляет_адрес_по_огрн(self):
+    def test_без_почты_остаётся_пустым(self):
         rows = [
             "630001, Новосибирская обл, г. Новосибирск, ул. Кирова, д. 27|id|Многоквартирный|УО|1025400000001",
         ]
@@ -295,7 +317,24 @@ class TestBuildDirectory(unittest.TestCase):
             )
             houses = make_ozhf(Path(folder) / "o.csv", rows)
             company = build_directory(providers, houses, "Новосибирск")["1025400000001"]
-        self.assertEqual(company.email, "ogrn1025400000001@gis.jkh")
+        # адрес не выдумывается: на выдуманный писать бессмысленно
+        self.assertEqual(company.email, "")
+
+    def test_почта_берётся_из_реестра(self):
+        rows = [
+            "630001, Новосибирская обл, г. Новосибирск, ул. Кирова, д. 27|id|Многоквартирный|УО|1025400000001",
+        ]
+        with TemporaryDirectory() as folder:
+            providers = make_xlsx(
+                Path(folder) / "p.xlsx",
+                [
+                    ["Полное наименование", "ОГРН", "Адрес электронной почты"],
+                    ["УК С Почтой", "1025400000001", "uk@novosibirsk.ru"],
+                ],
+            )
+            houses = make_ozhf(Path(folder) / "o.csv", rows)
+            company = build_directory(providers, houses, "Новосибирск")["1025400000001"]
+        self.assertEqual(company.email, "uk@novosibirsk.ru")
 
 
 class TestExport(unittest.TestCase):

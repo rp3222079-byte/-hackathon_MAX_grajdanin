@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -56,7 +56,30 @@ class TestMigrations(unittest.TestCase):
     def test_applied_versions_recorded(self):
         run_migrations(self.engine)
         with self.engine.connect() as conn:
-            self.assertEqual(applied_versions(conn), {1})
+            self.assertEqual(applied_versions(conn), {1, 2, 3})
+
+    def test_выдуманные_почты_обнуляются(self):
+        run_migrations(self.engine)
+        with Session(self.engine) as db:
+            db.add_all([
+                ManagementCompany(name="УК Проверка", email="noreply@gis.jkh", city="Новосибирск"),
+                ManagementCompany(name="УК Настоящая", email="uk@example.ru", city="Новосибирск"),
+            ])
+            db.commit()
+        # База, созданная до появления миграции: откатываем отметку,
+        # чтобы миграция выполнилась на уже заполненных данных.
+        with self.engine.begin() as conn:
+            conn.execute(text("DELETE FROM schema_migrations WHERE version = 3"))
+        run_migrations(self.engine)
+        with Session(self.engine) as db:
+            fake = db.scalar(
+                select(ManagementCompany).where(ManagementCompany.name == "УК Проверка")
+            )
+            real = db.scalar(
+                select(ManagementCompany).where(ManagementCompany.name == "УК Настоящая")
+            )
+        self.assertEqual(fake.email, "")
+        self.assertEqual(real.email, "uk@example.ru")
 
 
 class TestScenarios(unittest.TestCase):
